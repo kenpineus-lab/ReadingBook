@@ -174,9 +174,12 @@ async def ai(req: AIReq, x_family_code: str | None = Header(default=None)):
 @app.get("/books")
 def list_books(profile: str | None = None, x_family_code: str | None = Header(default=None)):
     check(x_family_code)
-    p = prof(profile)
     con = db()
-    rows = con.execute("SELECT profile, data FROM books WHERE profile=? ORDER BY id DESC", (p,)).fetchall()
+    # "all" is the shared family view - readable, never writable
+    if (profile or "").strip().lower() == "all":
+        rows = con.execute("SELECT profile, data FROM books ORDER BY id DESC").fetchall()
+    else:
+        rows = con.execute("SELECT profile, data FROM books WHERE profile=? ORDER BY id DESC", (prof(profile),)).fetchall()
     out = []
     for r in rows:
         d = json.loads(r["data"])

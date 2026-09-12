@@ -25,7 +25,11 @@ README.md             deploy guide (Korean)
 
 ## Profiles
 
-Four shelves: `henry`, `jeremy`, `rebecca`, `han`. `bl:profile` in `localStorage` picks
+Four shelves: `henry`, `jeremy`, `rebecca`, `han`, plus `all` — the Family shelf,
+which is a **view, not a person**: `GET /books?profile=all` merges every shelf, and
+writing or deleting with `profile=all` is a 400. The capture button is hidden there,
+because a book always belongs to whoever read it. `isFamily()` guards the UI; deletes
+from that view target the owner's shelf, not `all`. `bl:profile` in `localStorage` picks
 one per device; every `/books` call is scoped by it, so books and stats never mix.
 `PROFILES` in `index.html` is the single source of truth — id, display name, icon, and
 `level` (the reading level the AI prompts are written for). The server's `PROFILES`
@@ -57,6 +61,10 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   directed the machine — it is the point of the app, not telemetry. Keep it, and keep
   `before`/`after` whole. `Book.edits` on the server must exist or Pydantic silently drops it.
 - **Stats:** computed client-side in `renderLibrary` from `/books` (already profile-scoped). Genre labels/icons in `GN`.
+  Each tile is tappable: `S.stat` holds which one is open and `statDetail(kind)` renders the books
+  or questions behind that number, below the tiles. A number the reader can't open is a claim they
+  have to take on faith — don't add one.
+- **Theme:** daylight is the default; `bl:theme = "night"` opts out. The toggle is in the header.
 - **Finished report** offers Print and Copy only. There is no mail sending: the server has no
   mail provider, and a button that says "Send" must actually send.
 
@@ -89,7 +97,34 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 3. Pages: this repo → Settings → Pages → `main` / root. URL: https://kenpineus-lab.github.io/ReadingBook/
 4. Tablet: open the URL, enter server URL + family code once, add to home screen.
 
+## If this ever becomes a real service
+
+Not now — the family build deliberately stops short of all of this. Recorded so the
+questions are on the table the day launching is actually considered.
+
+- **Visibility per book.** `private` / `family` / `crew` on each saved book, defaulting to
+  `family`. Today every book in the house is visible to everyone with the family code; that
+  is fine for one household and wrong for anyone else. A 4th state — "counts only", where
+  outsiders see *that* someone read 12 books but not which, or what they wrote — is better
+  modelled as a separate profile-level setting than as a 4th visibility level.
+- **Identity is the real blocker, not the UI.** One shared `FAMILY_CODE` is the whole security
+  model. Crews need per-person accounts, per-person tokens, and a way to find and add someone
+  else's profile — that is real auth, session management, and an abuse surface (who can request
+  whom, how you block, what a child can accept without a parent). The visibility flags are an
+  afternoon; this is the project.
+- **Same book, different reports.** The strongest idea in the pile: two people who read the same
+  book comparing what they each wrote. Works inside one family today with no new infrastructure
+  (match on normalised title in the `all` view) and is worth building there first — it proves the
+  idea before any of the sharing machinery exists.
+- **COPPA, and it is not optional.** Sharing a child's writing beyond their own family means
+  collecting and disclosing under-13 personal information: verifiable parental consent, a
+  retention and deletion policy, and legal review before a single outside account is created.
+  Kids' book reports are exactly the category regulators care about. Decide this before writing
+  the auth, not after.
+
 ## Backlog (not started)
+
+- Let each person pick their own profile icon (currently hardcoded in `PROFILES`).
 
 - Per-profile reading level: `PROFILES[].level` exists but Jeremy and Rebecca are both
   "a young reader". Set their real grades to tune question difficulty.

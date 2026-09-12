@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Book Lab" />
-<meta name="theme-color" content="#15110D" />
+<meta name="theme-color" content="#EFE6D4" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
 <link rel="manifest" href="manifest.webmanifest" />
@@ -15,6 +15,8 @@
   /* A library at night: warm board, paper-cream text, gilt on the edges.
      Nothing here is lemon yellow - the accents come off book cloth and
      spine lettering. */
+  /* Daylight is the default; `bl:theme` = "night" opts into the other one.
+     Both define the same token set - never a raw hex outside these blocks. */
   :root{                      /* night: the library after hours */
     --bg:#15110D; --bg2:#1A1611; --panel:#1E1A14; --panel2:#252017; --line:#332B21;
     --text:#EFE5D4; --sub:#9C8B75; --ink:#D7CBB6;
@@ -105,6 +107,13 @@
 
   .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
   .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .row>div.tap{cursor:pointer;transition:border-color .12s,background .12s}
+  .row>div.tap:hover{border-color:var(--sub)}
+  .row>div.on{border-color:var(--amber);background:var(--chip)}
+  .det h6{margin:0 0 3px;font-size:13px;font-weight:700;font-family:var(--serif)}
+  .det .row2{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+  .det .row2:first-of-type{border-top:none}
+  .det .mini{font-size:11px;color:var(--sub);line-height:1.5}
   .row .n{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
   .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em}
 
@@ -184,11 +193,16 @@
   // ---------- config (server + family code live on this device only)
   var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
   var PROFILES = [
-    { id: "henry",   name: "Henry",   icon: "📚", level: "a 3rd grader" },
-    { id: "jeremy",  name: "Jeremy",  icon: "🚀", level: "a young reader" },
+    { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader" },
+    { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "a young reader" },
     { id: "rebecca", name: "Rebecca", icon: "🌸", level: "a young reader" },
     { id: "han",     name: "Han",     icon: "☕", level: "an adult reader" }
   ];
+  // Not a person - the whole household's shelf. Read-only: you can look, but a
+  // book is always saved to the person who read it.
+  var FAMILY = { id: "all", name: "Family", icon: "👪" };
+  function isFamily() { return cfg.profile === "all"; }
+  function who(id) { return PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0]; }
   var cfg = {
     srv: localStorage.getItem("bl:srv") || SRV,
     code: localStorage.getItem("bl:code") || "",
@@ -204,16 +218,17 @@
 
   function P() {
     var id = cfg.profile === "test" ? "han" : cfg.profile;   // "test" was the old name for Han's shelf
+    if (id === "all") return "all";
     return PROFILES.filter(function (x) { return x.id === id; }).length ? id : "henry";
   }
-  function RP() { return PROFILES.filter(function (x) { return x.id === P(); })[0] || PROFILES[0]; }
+  function RP() { return who(P()); }   // never "all" - the family shelf can't start a run
   function RN() { return RP().name; }                        // whose report the AI is writing
   function RL() { return RP().level; }
   function qp(path) { return path + (path.indexOf("?") < 0 ? "?" : "&") + "profile=" + P(); }
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [] };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null };
 
   // ---------- server
   async function api(path, opts) {
@@ -245,20 +260,30 @@
     var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap";
     var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);width:100%;margin-bottom:3px";
     row.appendChild(lab);
-    PROFILES.forEach(function (pr) {
+    PROFILES.concat([FAMILY]).forEach(function (pr) {
       var on = pr.id === P();
       var b = el("button", "sm", pr.icon + " " + pr.name);
       b.style.cssText = "padding:7px 11px;font-size:12px;font-weight:800;border-radius:9px;" +
-        (on ? "color:var(--bg);background:" + (pr.id === "han" ? "var(--violet)" : "var(--amber)")
+        (on ? "color:var(--onAccent);background:" + (pr.id === "all" ? "var(--gold)" : pr.id === "han" ? "var(--violet)" : "var(--amber)")
             : "color:var(--sub)");
       b.onclick = function () {
         if (pr.id === P()) return;
         cfg.profile = pr.id; localStorage.setItem("bl:profile", pr.id);
-        S.books = []; resetRun(); renderWho(); show("library"); loadBooks();
+        S.books = []; S.stat = null; resetRun(); renderWho(); show("library"); loadBooks();
       };
       row.appendChild(b);
     });
     w.appendChild(row);
+    if (isFamily()) {
+      var counts = {};
+      S.books.forEach(function (x) { counts[x.profile || "henry"] = (counts[x.profile || "henry"] || 0) + 1; });
+      var f = el("div");
+      f.style.cssText = "font-size:11px;color:var(--sub);margin-top:9px;display:flex;gap:11px;flex-wrap:wrap";
+      f.innerHTML = PROFILES.map(function (pr) {
+        return '<span>' + pr.icon + ' ' + esc(pr.name) + ' <b style="color:var(--gold)">' + (counts[pr.id] || 0) + '</b></span>';
+      }).join("");
+      w.appendChild(f);
+    }
     if (P() === "han") {
       var t = el("div", null, "Han's shelf \u2014 kept separate from the kids' books and stats.");
       t.style.cssText = "font-size:11px;color:var(--violet);margin-top:8px";
@@ -273,11 +298,18 @@
   async function loadBooks() {
     if (needSetup()) return;
     try { S.books = await api(qp("/books")); } catch (e) { err(e.message); }
+    renderWho();          // the family tally counts S.books, which only exists now
     renderLibrary();
   }
 
   function renderLibrary() {
     var L = $("library"); L.innerHTML = "";
+    if (isFamily()) {
+      var fb = el("div", "box");
+      fb.innerHTML = '<div class="lbl" style="color:var(--gold);margin-bottom:6px">EVERYONE\'S BOOKS</div>' +
+        '<p class="note" style="margin:0">Four shelves in one. To add a book, tap the person who read it.</p>';
+      L.appendChild(fb);
+    } else {
     var b = el("div", "box");
     b.innerHTML = '<button id="photo" class="big amber">📷 Take a photo of your book</button>' +
       '<input id="file" type="file" accept="image/*" capture="environment" class="hide" />' +
@@ -292,6 +324,7 @@
     $("men").onclick = function () { S.lang = "en"; $("men").style.color = "var(--amber)"; $("mko").style.color = ""; };
     $("mgo").onclick = function () { var t = $("mtitle").value.trim(); if (!t) return; S.title = t; S.author = ""; S.lang = S.lang || "en"; startQuiz(); };
     if (S.title) showCover();
+    }
 
     if (S.books.length) {
       var now = new Date(), ym = now.toISOString().slice(0, 7);
@@ -314,31 +347,105 @@
       var st = el("div", "box");
       st.innerHTML =
         '<div class="row" style="margin-bottom:10px">' +
-          '<div style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--gold)">' + S.books.length + '</div><div class="l" style="font-size:11px;margin-top:6px">BOOKS READ</div></div>' +
-          '<div style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + month + '</div><div class="l" style="font-size:11px;margin-top:6px">THIS MONTH</div></div>' +
+          '<div class="tap' + (S.stat === "books" ? " on" : "") + '" data-stat="books" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--gold)">' + S.books.length + '</div><div class="l" style="font-size:11px;margin-top:6px">BOOKS READ</div></div>' +
+          '<div class="tap' + (S.stat === "month" ? " on" : "") + '" data-stat="month" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + month + '</div><div class="l" style="font-size:11px;margin-top:6px">THIS MONTH</div></div>' +
         '</div>' +
         '<div class="row">' +
-          '<div><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
-          '<div><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
+          '<div class="tap' + (S.stat === "streak" ? " on" : "") + '" data-stat="streak"><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
+          '<div class="tap' + (S.stat === "diff" ? " on" : "") + '" data-stat="diff"><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
           (ko ? '<div><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' : '') +
         '</div>' +
         (genres.length ? '<div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
           genres.slice(0, 5).map(function (g) { var m = GN[g] || GN.other; return '<div class="stars" style="margin-bottom:6px"><span style="font-size:13px;width:22px">' + m[2] + '</span><span style="font-size:12px;width:88px;color:var(--text)">' + m[0] + '</span><div class="t" style="height:10px"><div class="f" style="width:' + (G[g] / maxG * 100) + '%;background:var(--green)"></div></div><span class="c" style="font-size:12px;color:var(--text);width:20px">' + G[g] + '</span></div>'; }).join("") : "");
       L.appendChild(st);
 
+      // a number on its own is a claim; tapping it shows the books behind it
+      Array.prototype.forEach.call(st.querySelectorAll(".tap"), function (t) {
+        t.onclick = function () {
+          var k = t.getAttribute("data-stat");
+          S.stat = (S.stat === k) ? null : k;
+          renderLibrary();
+        };
+      });
+      if (S.stat) L.appendChild(statDetail(S.stat));
+
       var lst = el("div", "box");
-      lst.innerHTML = '<div class="lbl">BOOKS YOU\'VE FINISHED · ' + S.books.length + '</div>';
+      lst.innerHTML = '<div class="lbl">' + (isFamily() ? "EVERY BOOK THIS FAMILY HAS FINISHED" : "BOOKS YOU\'VE FINISHED") + ' · ' + S.books.length + '</div>';
       S.books.forEach(function (x) {
         var r = el("div", "book");
         r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
-          '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
+          '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (isFamily() ? who(x.profile).icon + ' ' + esc(who(x.profile).name) + ' · ' : '') + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
-        var db = el("button", "sm", "✕"); db.style.color = "var(--sub)"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api(qp("/books/" + x.id), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
+        var db = el("button", "sm", "✕"); db.style.color = "var(--sub)"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api("/books/" + x.id + "?profile=" + (isFamily() ? (x.profile || "henry") : P()), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
       L.appendChild(lst);
     }
   }
+  // what's behind each number. Same data the tiles counted, just spelled out.
+  function weekKey(d) { return d.getFullYear() + "-" + Math.floor((d - new Date(d.getFullYear(), 0, 1)) / 6048e5); }
+
+  function bookLine(x) {
+    var r = el("div", "row2");
+    r.innerHTML = (x.cover ? '<img src="' + x.cover + '" style="width:30px;height:41px;object-fit:cover;border-radius:3px;flex-shrink:0" alt=""/>' : '') +
+      '<div style="flex:1;min-width:0"><h6>' + esc(x.title) + '</h6>' +
+      '<div class="mini">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div></div>';
+    var b = el("button", "sm", (isFamily() ? who(x.profile).icon + " " : "") + "Report"); b.style.cssText = "color:var(--amber);align-self:center";
+    b.onclick = function () { S.report = x; renderReport(); show("report"); };
+    r.appendChild(b);
+    return r;
+  }
+
+  function statDetail(kind) {
+    var box = el("div", "box det"), body = el("div");
+    var head = { books: "EVERY BOOK YOU'VE FINISHED", month: "FINISHED THIS MONTH",
+                 streak: "YOUR WEEKS, MOST RECENT FIRST", diff: "WHERE YOU AND THE AI READ IT DIFFERENTLY" }[kind];
+    box.innerHTML = '<div class="lbl" style="color:var(--amber)">' + head + '</div>';
+
+    if (kind === "books" || kind === "month") {
+      var ym = new Date().toISOString().slice(0, 7);
+      var list = kind === "month" ? S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; }) : S.books;
+      if (!list.length) body.innerHTML = '<p class="note" style="margin:0">Nothing here yet.</p>';
+      else list.forEach(function (x) { body.appendChild(bookLine(x)); });
+
+    } else if (kind === "streak") {
+      var byWeek = {};
+      S.books.forEach(function (x) { var k = weekKey(new Date(x.date)); (byWeek[k] = byWeek[k] || []).push(x); });
+      var now = new Date(), any = false;
+      for (var i = 0; i < 52; i++) {
+        var d = new Date(now - i * 6048e5), k = weekKey(d), got = byWeek[k];
+        if (!got) { if (i === 0) continue; break; }
+        any = true;
+        var r = el("div", "row2");
+        var mon = new Date(d - ((d.getDay() + 6) % 7) * 864e5);
+        r.innerHTML = '<div style="width:78px;flex-shrink:0"><div class="mini" style="color:var(--amber);font-weight:800">' +
+          (i === 0 ? "This week" : "Week of") + '</div><div class="mini">' + mon.toISOString().slice(5, 10).replace("-", "/") + '</div></div>' +
+          '<div style="flex:1;min-width:0">' + got.map(function (x) { return '<h6>' + esc(x.title) + '</h6>'; }).join("") + '</div>' +
+          '<div style="color:var(--gold);font-weight:800;align-self:center">' + got.length + '</div>';
+        body.appendChild(r);
+      }
+      if (!any) body.innerHTML = '<p class="note" style="margin:0">Read one book this week to start a streak.</p>';
+
+    } else {
+      S.books.forEach(function (x) {
+        (x.answers || []).filter(function (a) { return !a.aiSame; }).forEach(function (a) {
+          var r = el("div", "row2");
+          r.innerHTML = '<span style="color:var(--violet);font-weight:800">\u2726</span>' +
+            '<div style="flex:1;min-width:0"><div class="mini" style="color:var(--amber)">' + esc(x.title) + '</div>' +
+            '<h6 style="font-weight:400;line-height:1.4;margin:2px 0 3px">' + esc(a.q) + '</h6>' +
+            '<div class="mini" style="color:var(--text)">You said: ' + esc(a.pickedText) + '</div>' +
+            '<div class="mini">The AI picked ' + esc(String(a.aiPick || "?").toUpperCase()) +
+            ', ' + esc(String(a.sure || "medium").toLowerCase()) + ' confidence</div></div>';
+          body.appendChild(r);
+        });
+      });
+      if (!body.firstChild) body.innerHTML = '<p class="note" style="margin:0">So far you and the AI have read every question the same way.</p>';
+    }
+
+    box.appendChild(body);
+    return box;
+  }
+
   function showCover() {
     $("coverBox").classList.remove("hide");
     if (S.cover) $("coverImg").src = S.cover; else $("coverImg").removeAttribute("src");
@@ -706,7 +813,7 @@
   };
   $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
   if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
-  applyTheme(localStorage.getItem("bl:theme") === "day" ? "day" : "night");
+  applyTheme(localStorage.getItem("bl:theme") === "night" ? "night" : "day");
   $("themeBtn").onclick = function () {
     var t = document.documentElement.getAttribute("data-theme") === "day" ? "night" : "day";
     localStorage.setItem("bl:theme", t); applyTheme(t);
