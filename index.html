@@ -110,6 +110,11 @@
   .row>div.tap{cursor:pointer;transition:border-color .12s,background .12s}
   .row>div.tap:hover{border-color:var(--sub)}
   .row>div.on{border-color:var(--amber);background:var(--chip)}
+  .langrow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:8px;
+    padding:6px 11px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:inherit}
+  .lang b{color:var(--text);font-weight:800;margin-left:5px;font-size:12px}
+  .lang.on{border-color:var(--amber);color:var(--amber)}.lang.on b{color:var(--amber)}
   .det h6{margin:0 0 3px;font-size:13px;font-weight:700;font-family:var(--serif)}
   .det .row2{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
   .det .row2:first-of-type{border-top:none}
@@ -139,6 +144,16 @@
   .sec h5{font-size:10px;font-weight:700;color:var(--amber);margin:0 0 5px;letter-spacing:.12em;text-transform:uppercase}
   .sec p{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.68;color:var(--ink)}
 
+  /* the finished report: paragraphs, not fields */
+  .essay{max-width:62ch}
+  .essay p{margin:0 0 .8em;font-family:var(--serif);font-size:16px;line-height:1.78;
+    color:var(--ink);text-indent:1.3em}
+  .essay p:first-child{text-indent:0}
+  .essay p:last-child{margin-bottom:0}
+  .essay p:first-child::first-letter{float:left;font-family:var(--serif);font-weight:700;
+    font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:var(--gold)}
+  .head{border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:15px}
+
   .ans{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
   .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}.ans .aa{font-size:12px;margin-top:2px}
   .note{font-size:11px;color:var(--sub);line-height:1.65;margin:11px 0 0}
@@ -151,6 +166,46 @@
   .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
   .cover img{width:64px;height:88px;object-fit:cover;border-radius:4px;border:1px solid var(--line);
     box-shadow:3px 3px 12px -6px rgba(0,0,0,.95)}
+
+  /* --- phone is the default above. Tablet: more room, bigger type, and the
+         stat tiles line up in one band instead of stacking two by two. --- */
+  @media (min-width:680px){
+    .wrap{max-width:740px;padding:28px 24px 175px}
+    h1{font-size:24px}
+    .tag{font-size:14px;margin-bottom:22px}
+    .box{padding:20px;border-radius:16px}
+    .big{padding:17px;font-size:16px}
+    .opt{font-size:15px;padding:15px 16px}
+    .q{font-size:21px}
+    .sec p{font-size:16.5px}
+    .essay p{font-size:17px;line-height:1.8}
+    .book .t{font-size:16px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+    .stats .row{display:contents}
+    .stats .row>div{margin:0}
+    .stats>.genres,.stats>.langrow{grid-column:1/-1}
+    .stats .n{font-size:30px!important}
+    .shelf{height:150px;background-size:auto 150px}
+  }
+  /* --- Desktop: a page, not a stretched phone. The column stays a readable
+         measure; the shelf and the lamp do the rest of the width. --- */
+  @media (min-width:1080px){
+    .wrap{max-width:820px;padding:40px 28px 210px}
+    h1{font-size:26px}
+    .essay p{font-size:17.5px}
+    .shelf{height:190px;background-size:auto 190px;opacity:calc(var(--shelfO) * .85)}
+  }
+  /* touch devices get targets you can actually hit with a thumb */
+  @media (hover:none){
+    .sm{padding:10px 13px}
+    .lang{padding:9px 13px}
+    .row>div.tap:hover{border-color:var(--line)}
+  }
+  /* a phone held sideways has almost no height to spare */
+  @media (max-height:520px){
+    .shelf{height:70px;background-size:auto 70px}
+    .wrap{padding-bottom:90px}
+  }
 </style>
 </head>
 <body>
@@ -193,7 +248,8 @@
   // ---------- config (server + family code live on this device only)
   var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
   var PROFILES = [
-    { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader" },
+    { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader",
+      levelEn: "a 3rd grader who reads English about two grades ahead, so pitch the questions and the writing at a 5th-grade level" },
     { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "an 8th grader" },
     { id: "rebecca", name: "Rebecca", icon: "🌸", level: "an adult reader" },
     { id: "han",     name: "Han",     icon: "☕", level: "an adult reader" }
@@ -223,7 +279,10 @@
   }
   function RP() { return who(P()); }   // never "all" - the family shelf can't start a run
   function RN() { return RP().name; }                        // whose report the AI is writing
-  function RL() { return RP().level; }
+  function RL() {                      // English can be stretched past grade level; Korean isn't
+    var pr = RP();
+    return (L() === "en" && pr.levelEn) ? pr.levelEn : pr.level;
+  }
   function qp(path) { return path + (path.indexOf("?") < 0 ? "?" : "&") + "profile=" + P(); }
   function needSetup() { return !cfg.srv || !cfg.code; }
 
@@ -344,7 +403,7 @@
       var ko = S.books.filter(function (x) { return x.lang === "ko"; }).length;
       var maxG = G[genres[0]] || 1;
 
-      var st = el("div", "box");
+      var st = el("div", "box stats");
       st.innerHTML =
         '<div class="row" style="margin-bottom:10px">' +
           '<div class="tap' + (S.stat === "books" ? " on" : "") + '" data-stat="books" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--gold)">' + S.books.length + '</div><div class="l" style="font-size:11px;margin-top:6px">BOOKS READ</div></div>' +
@@ -354,12 +413,12 @@
           '<div class="tap' + (S.stat === "streak" ? " on" : "") + '" data-stat="streak"><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
           '<div class="tap' + (S.stat === "diff" ? " on" : "") + '" data-stat="diff"><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
         '</div>' +
-        '<div class="row">' +
-          '<div class="tap' + (S.stat === "en" ? " on" : "") + '" data-stat="en"><div class="n" style="color:var(--text)">' + (S.books.length - ko) + '</div><div class="l">ENGLISH</div></div>' +
-          '<div class="tap' + (S.stat === "ko" ? " on" : "") + '" data-stat="ko"><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' +
-        '</div>' +
-        (genres.length ? '<div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
-          genres.slice(0, 5).map(function (g) { var m = GN[g] || GN.other; return '<div class="stars" style="margin-bottom:6px"><span style="font-size:13px;width:22px">' + m[2] + '</span><span style="font-size:12px;width:88px;color:var(--text)">' + m[0] + '</span><div class="t" style="height:10px"><div class="f" style="width:' + (G[g] / maxG * 100) + '%;background:var(--green)"></div></div><span class="c" style="font-size:12px;color:var(--text);width:20px">' + G[g] + '</span></div>'; }).join("") : "");
+        (genres.length ? '<div class="genres"><div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
+          genres.slice(0, 5).map(function (g) { var m = GN[g] || GN.other; return '<div class="stars" style="margin-bottom:6px"><span style="font-size:13px;width:22px">' + m[2] + '</span><span style="font-size:12px;width:88px;color:var(--text)">' + m[0] + '</span><div class="t" style="height:10px"><div class="f" style="width:' + (G[g] / maxG * 100) + '%;background:var(--green)"></div></div><span class="c" style="font-size:12px;color:var(--text);width:20px">' + G[g] + '</span></div>'; }).join("") + '</div>' : "") +
+        '<div class="langrow">' +
+          '<button class="tap lang' + (S.stat === "en" ? " on" : "") + '" data-stat="en">ENGLISH <b>' + (S.books.length - ko) + '</b></button>' +
+          '<button class="tap lang' + (S.stat === "ko" ? " on" : "") + '" data-stat="ko">한글책 <b>' + ko + '</b></button>' +
+        '</div>';
       L.appendChild(st);
 
       // a number on its own is a claim; tapping it shows the books behind it
@@ -548,7 +607,7 @@
     busy(T("The AI wants to ask you a few things...", "AI가 몇 가지 더 물어보고 싶대요..."));
     try {
       var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → " + RN() + " picked: " + a.pickedText; }).join("\n");
-      var raw = await ai(RN() + ' is ' + RL() + ' who just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\nHe answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var raw = await ai(RN() + ' is ' + RL() + '.\nThey just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + ' and answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Ask him" }], 1200);
       var fq = blocks(raw, "fq").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 3);
       if (!fq.length) { busy(""); return makeReport(); }
@@ -630,7 +689,7 @@
       var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
       var DESC = { summary: "(2 sentences about what the book is about, based on his answers)", favorite: "(1-2 sentences about the part or character he liked, in his voice)", feeling: "(1-2 sentences about how the book made him feel, based on what he said)", learned: "(1 sentence about what he might take away from it)", recommend: "(1 short sentence — would he tell a friend to read it, and why)" };
       var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
-      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — simple, honest, the way they would say it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order, and make them flow into each other:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
+      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — simple, honest, the way they would say it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
         [{ role: "user", content: "Write the report" }], 900);
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
@@ -745,17 +804,19 @@
   function reportText(b) {
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Read by " + bookReader(b) + "   Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
-      r.summary ? "What it's about\n" + r.summary : "", r.favorite ? "\nMy favorite part\n" + r.favorite : "", r.feeling ? "\nHow it made me feel\n" + r.feeling : "",
-      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz \u2014 same as the AI: " + b.aiWins + ", read it differently: " + b.henryWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
+      ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
+        .map(function (k) { return r[k]; }).filter(Boolean).join("\n\n"), "", "Quiz \u2014 same as the AI: " + b.aiWins + ", read it differently: " + b.henryWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
   }
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
     var box = el("div", "box");
-    box.innerHTML = '<div style="display:flex;gap:13px;margin-bottom:14px">' + (b.cover ? '<img src="' + b.cover + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
+    box.innerHTML = '<div class="head" style="display:flex;gap:13px">' + (b.cover ? '<img src="' + b.cover + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
       '<div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--sub);letter-spacing:.12em">BOOK REPORT</div><div style="font-size:17px;font-weight:900;line-height:1.25;margin-top:3px">' + esc(b.title) + '</div>' +
       (b.author ? '<div style="font-size:12px;color:var(--sub)">' + esc(b.author) + '</div>' : '') + '<div style="font-size:11px;color:var(--sub);margin-top:5px">Finished ' + esc(b.date) + '</div><div style="font-size:15px;color:var(--gold);margin-top:3px">' + stars(r.stars) + '</div></div></div>' +
-      ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; })).map(function (k) { var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0]; return sec ? [b.lang === "ko" ? sec[2] : sec[1], r[k]] : [null, null]; })
-        .filter(function (x) { return x[1]; }).map(function (x) { return '<div class="sec"><h5>' + x[0] + '</h5><p>' + esc(x[1]) + '</p></div>'; }).join("");
+      '<div class="essay">' +
+      ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
+        .map(function (k) { return r[k]; }).filter(Boolean)
+        .map(function (t) { return '<p>' + esc(t) + '</p>'; }).join("") + '</div>';
     R.appendChild(box);
 
     var sc = el("div", "box");
@@ -770,13 +831,20 @@
 
     if ((b.edits || []).length) R.appendChild(editLog(b));
 
-    var btns = el("div"); btns.style.cssText = "display:flex;gap:9px;margin-bottom:10px";
-    var pr = el("button", "big green", "🖨 " + T("Print it", "인쇄하기")); pr.style.cssText = "font-size:13px;flex:1;min-width:0";
+    // what almost everyone does next is read another book, so that is the coloured
+    // one; printing is real but rare, and sits below with copy
+    var again = el("button", "big green", "↻ " + T("Do another book", "다른 책 하기"));
+    again.style.marginBottom = "10px";
+    again.onclick = function () { resetRun(); show("library"); };
+    R.appendChild(again);
+
+    var btns = el("div"); btns.style.cssText = "display:flex;gap:9px";
+    var pr = el("button", "big plain", "🖨 " + T("Print it", "인쇄하기")); pr.style.cssText = "font-size:13px;flex:1;min-width:0";
     pr.onclick = function () { printReport(b); };
     var cp = el("button", "big plain", "⧉ " + T("Copy", "복사")); cp.style.cssText = "font-size:13px;flex:1;min-width:0";
     cp.onclick = async function () { try { await navigator.clipboard.writeText(reportText(b)); busy(T("Copied!", "복사됐어요!")); setTimeout(function () { busy(""); }, 1600); } catch (x) { err("Couldn't copy on this device."); } };
     btns.appendChild(pr); btns.appendChild(cp); R.appendChild(btns);
-    var again = el("button", "big dark", "↻ Do another book"); again.onclick = function () { resetRun(); show("library"); }; R.appendChild(again);
+
   }
   function editLog(b) {
     var box = el("div", "box"), open = false;
@@ -800,10 +868,12 @@
   function printReport(b) {
     var w = window.open("", "_blank"); if (!w) { err("Your browser blocked the print window."); return; }
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
-    var sec = function (l, t) { return t ? "<h2>" + l + "</h2><p>" + esc(t) + "</p>" : ""; };
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#b8860b;margin:22px 0 6px}p{margin:0;font-size:15px}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
-      sec("What it's about", r.summary) + sec("My favorite part", r.favorite) + sec("How it made me feel", r.feeling) + sec("What I take from it", r.learned) + sec("Would I tell a friend?", r.recommend) +
-      '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
+    var paras = ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
+      .map(function (k) { return r[k]; }).filter(Boolean)
+      .map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}p{margin:0 0 .8em;font-size:15.5px;text-indent:1.3em}p:first-of-type{text-indent:0}p:first-of-type::first-letter{float:left;font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:#b8860b;font-weight:700}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
+      paras +
+      '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &middot; written in Book Lab</div></body></html>');
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 

@@ -34,7 +34,11 @@ one per device; every `/books` call is scoped by it, so books and stats never mi
 `PROFILES` in `index.html` is the single source of truth — id, display name, icon, and
 `level` (the reading level the AI prompts are written for: Henry 3rd grade, Jeremy 8th
 grade, Rebecca and Han adults). `level` is not decoration — it sets how hard the quiz
-questions come back, so keep it accurate as the kids grow. The server's `PROFILES`
+questions come back and how the report is written, so keep it accurate as the kids grow.
+An optional `levelEn` overrides it for English books only: Henry reads Korean at grade
+level but English two grades ahead, so `RL()` picks by `L()`, not by profile alone. Any
+phrase put in `level`/`levelEn` has to survive being dropped mid-sentence in five prompts —
+keep it a noun phrase. The server's `PROFILES`
 tuple must list the same ids. Han's shelf is Dad's, for testing.
 
 Language follows the **book**, not the profile: the cover-photo call returns
@@ -55,7 +59,8 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   4. `renderPlan` → Henry picks audience (teacher/friend/me) and taps sections in order. "Just write it" skips.
   5. `makeReport` → AI writes only the chosen sections in the chosen order for that audience → `renderConfirm`.
   6. `renderConfirm` → tap a section to reveal `FIXES` chips → `fixSection(k, fix, custom)` rewrites
-     that section. `openCustom(k)` is the typed fallback — the reader dictates the change in
+     that section — the section labels exist **only here**, as scaffolding for choosing what
+     to fix. `openCustom(k)` is the typed fallback — the reader dictates the change in
      their own words. Stars adjustable. `saveReport` POSTs to `/books` only after
      "Yes, that's my report!".
 - **Edit log:** every accepted rewrite is pushed to `S.edits` with `{section, fix, custom, before,
@@ -67,6 +72,12 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   or questions behind that number, below the tiles. A number the reader can't open is a claim they
   have to take on faith — don't add one.
 - **Theme:** daylight is the default; `bl:theme = "night"` opts out. The toggle is in the header.
+- **Finished report is one piece of writing, not a form.** `renderReport`, `printReport` and
+  `reportText` drop the section labels entirely and set the parts as consecutive paragraphs
+  (`.essay`, drop cap, indented runs). The report prompt is told it will be printed with no
+  headings, so each part must read as the next paragraph. Don't put the labels back.
+- **Report actions:** the coloured button is "Do another book", because that is what happens
+  next nine times out of ten. Print and Copy sit below it, plain.
 - **Finished report** offers Print and Copy only. There is no mail sending: the server has no
   mail provider, and a button that says "Send" must actually send.
 
@@ -86,6 +97,12 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 - Edit `index.html` directly. Validate with: extract the `<script>` body and run `npx esbuild --target=es2017` on it. That catches syntax errors; there is no test suite.
 - Validate the server with `python -c "import ast; ast.parse(open('server/main.py').read())"` and, for behavior, the `fastapi.testclient` snippet in the README history: set `DB_PATH=/tmp/t.db FAMILY_CODE=1234`, then POST/GET/DELETE `/books` with the header.
 - Both languages: any new user-facing string goes through `T(en, ko)`. Any new AI prompt must branch on `L()` so Korean books get Korean questions (해요체).
+- **Three sizes, one column.** Phone is the default; `@media (min-width:680px)` widens the
+  measure, grows the type and turns the stat tiles into one four-across band via
+  `.stats .row{display:contents}`; `min-width:1080px` widens a little further and lets the
+  artwork carry the rest. `.essay` is capped at 62ch — a desktop window is not a reason to
+  set a 9-year-old's writing across 140 characters. Also `@media (hover:none)` for thumb-sized
+  targets and `max-height:520px` for a phone held sideways.
 - Two themes, one palette contract: `:root` is night, `html[data-theme="day"]` overrides the same tokens, and `bl:theme` remembers the choice per device. Any new surface colour must be a token (`--well`, `--chip`, `--chip2`, `--dim`, `--ph`, `--onAccent`) — a raw hex in CSS or in a JS inline style will survive the theme swap and look broken in daylight.
 - Artwork lives in `assets/` as real files, not data URIs — they are same-origin on Pages and stay editable. The palette is warm library (leather, paper cream, gilt); no flat yellow.
 - `.hide` must stay `display:none!important` — `.cover{display:flex}` is defined after it and used to win.
