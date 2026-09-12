@@ -259,8 +259,13 @@
   var FAMILY = { id: "all", name: "Family", icon: "👪" };
   // Tap-only on purpose - opening the emoji keyboard would put a text field on
   // the one screen that is meant to need none.
-  var ICONS = ["🐻","🚗","🌸","☕","🦊","🐼","🦕","🚀","⚽","🎸","🐙","🦉",
-               "🌙","⭐","🍀","🐳","🎨","🧁","🦄","🐢","🔭","🧩","🌵","🍕"];
+  // Faces come first: a kid picks the one that looks like how they feel today,
+  // which is a better hook than a nice-looking animal.
+  var ICONS = ["😀","😄","😎","🤓","🤔","🥰","🤗","😇",
+               "🥳","😴","🙃","😤","😭","😳","🤪","😬",
+               "🐻","🚗","🌸","☕","🦊","🐼","🦕","🚀",
+               "⚽","🎸","🐙","🦉","🌙","⭐","🍀","🐳",
+               "🎨","🧁","🦄","🐢","🔭","🧩","🌵","🍕"];
   function isFamily() { return cfg.profile === "all"; }
   function who(id) {
     var pr = PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0];
@@ -299,7 +304,7 @@
     if (id === "all") return "all";
     return PROFILES.filter(function (x) { return x.id === id; }).length ? id : "henry";
   }
-  function RP() { return who(P()); }   // never "all" - the family shelf can't start a run
+  function RP() { return who(S.asProfile || P()); }   // never "all"; while revising, the book's owner
   function RN() { return RP().name; }                        // whose report the AI is writing
   // Level sets how hard; voice sets how it sounds. An adult writing about a book
   // should not read like a third grader, however gentle the app is elsewhere.
@@ -320,7 +325,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   async function api(path, opts) {
@@ -493,6 +498,9 @@
         r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
           '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (isFamily() ? who(x.profile).icon + ' ' + esc(who(x.profile).name) + ' · ' : '') + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
+        var eb = el("button", "sm", "✎"); eb.style.color = "var(--violet)"; eb.title = "Revise this report";
+        eb.onclick = function () { editReport(x); };
+        r.appendChild(eb);
         var db = el("button", "sm", "✕"); db.style.color = "var(--sub)"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api("/books/" + x.id + "?profile=" + (isFamily() ? (x.profile || "henry") : P()), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
@@ -749,6 +757,7 @@
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
       S.draft = r;
+      S.report0 = JSON.parse(JSON.stringify(S.draft));   // frozen: what the AI wrote before anyone touched it
       renderConfirm(); show("report");
     } catch (x) { err(T("Couldn't write the report. Try once more.", "독후감을 못 썼어요. 한 번 더 해볼래요?")); }
     busy("");
@@ -770,8 +779,23 @@
     var r = S.draft, R = $("report"); R.innerHTML = "";
     var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
     var AUDL = { teacher: T("for my teacher", "선생님께"), friend: T("for a friend", "친구에게"), me: T("just for me", "나만 보기") };
+    if (S.editingId) {
+      var eb = el("div", "box");
+      eb.style.cssText = "border-color:var(--violet);padding:12px 14px";
+      eb.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--violet)">✎ ' +
+        T("Revising a report you already saved", "이미 저장한 독후감을 고치는 중") + '</div>' +
+        '<p class="note" style="margin:5px 0 0">' +
+        T("Finished " + esc(S.editBase.date) + ". Everything you change from here is added to the same record.",
+          esc(S.editBase.date) + "에 쓴 글이에요. 여기서 고친 건 같은 기록에 이어서 남아요.") + '</p>';
+      var cx = el("button", "sm", T("Leave it as it was", "그냥 두기"));
+      cx.style.cssText = "margin-top:10px;color:var(--sub)";
+      cx.onclick = function () { resetRun(); show("library"); };
+      eb.appendChild(cx);
+      R.appendChild(eb);
+    }
+
     var box = el("div", "box");
-    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + T("READ IT — IS THIS YOU?", "읽어봐요 — 헨리 말이 맞아요?") + '</div>' +
+    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + (S.editingId ? T("READ IT AGAIN — WHAT WOULD YOU CHANGE?", "다시 읽어봐요 — 뭘 고칠까요?") : T("READ IT — IS THIS YOU?", "읽어봐요 — 헨리 말이 맞아요?")) + '</div>' +
       '<div style="font-size:17px;font-weight:900;line-height:1.25;margin-bottom:2px">' + esc(S.title) + '</div>' +
       '<div style="font-size:11px;color:var(--sub);margin-bottom:4px">' + (AUDL[S.audience] || "") + '</div>' +
       '<div style="font-size:15px;color:var(--gold);margin-bottom:14px">' + stars(r.stars) + '</div>' +
@@ -798,7 +822,7 @@
       row.appendChild(cust);
     });
 
-    var ok = el("button", "big green", "✓ " + T("Yes, that's my report!", "네, 이게 제 독후감이에요!")); ok.style.marginBottom = "9px";
+    var ok = el("button", "big green", "✓ " + (S.editingId ? T("Save the changes", "고친 걸 저장할게요") : T("Yes, that's my report!", "네, 이게 제 독후감이에요!"))); ok.style.marginBottom = "9px";
     ok.onclick = saveReport; R.appendChild(ok);
     var st = el("div"); st.style.cssText = "display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:6px";
     st.innerHTML = '<span style="font-size:11px;color:var(--sub)">' + T("Stars:", "별점:") + '</span>' + [1, 2, 3, 4, 5].map(function (n) { return '<button class="sm stb" data-n="' + n + '" style="padding:6px 9px;color:' + (n <= (parseInt(r.stars) || 3) ? "var(--gold)" : "var(--line)") + '">★</button>'; }).join("");
@@ -843,13 +867,45 @@
   async function saveReport() {
     busy(T("Saving...", "저장하는 중..."));
     try {
+      var base = S.editBase;
       var wins = S.ans.filter(function (a) { return !a.aiSame; }).length;
-      var entry = { id: Date.now(), profile: P(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, edits: S.edits || [], henryWins: wins, aiWins: S.ans.length - wins };
+      var entry = {
+        id: S.editingId || Date.now(),
+        profile: base ? (base.profile || "henry") : P(),
+        title: S.title, author: S.author, cover: S.cover,
+        date: base ? base.date : new Date().toISOString().slice(0, 10),
+        lang: L(), genre: S.genre || "other", kind: S.kind || "fiction",
+        audience: S.audience || "me", order: S.order || [],
+        answers: S.ans, follow: S.fans, report: S.draft,
+        report0: S.report0 || null,
+        edits: S.edits || [],
+        henryWins: wins, aiWins: S.ans.length - wins,
+        updatedAt: new Date().toISOString()
+      };
       await api("/books", { method: "POST", body: JSON.stringify(entry) });
       S.report = entry; renderReport(); show("report");
       loadBooks();
     } catch (x) { err(T("Couldn't save: ", "저장 실패: ") + x.message); }
     busy("");
+  }
+
+  // Revision is the part of writing that actually teaches. Reopening a saved
+  // report keeps the original AI draft, keeps every earlier edit, and says out
+  // loud that this is a rewrite - not a fresh run.
+  function editReport(b) {
+    S.editingId = b.id;
+    S.editBase = b;
+    S.asProfile = b.profile || "henry";        // voice and level follow the owner, not the viewer
+    S.title = b.title; S.author = b.author || ""; S.cover = b.cover || null;
+    S.lang = b.lang === "ko" ? "ko" : "en";
+    S.genre = b.genre || "other"; S.kind = b.kind || "fiction";
+    S.audience = b.audience || "me";
+    S.order = (b.order && b.order.length) ? b.order.slice() : SECTIONS.map(function (x) { return x[0]; });
+    S.ans = b.answers || []; S.fans = b.follow || [];
+    S.draft = JSON.parse(JSON.stringify(b.report || {}));
+    S.edits = (b.edits || []).slice();
+    S.report0 = b.report0 || null;             // legacy books have none, and we don't invent one
+    err(""); renderConfirm(); show("report");
   }
 
   function bookReader(b) {
@@ -884,6 +940,7 @@
                              "\u2726 는 " + RN() + "와 AI가 다르게 읽은 곳이에요. 누가 자동으로 맞는 건 아니에요 \u2014 다만 책을 진짜 읽은 사람은 한 명뿐이죠. 그걸 기억해요.") + '</p>';
     R.appendChild(sc);
 
+    if (b.report0) R.appendChild(firstDraft(b));
     if ((b.edits || []).length) R.appendChild(editLog(b));
 
     // what almost everyone does next is read another book, so that is the coloured
@@ -901,6 +958,22 @@
     btns.appendChild(pr); btns.appendChild(cp); R.appendChild(btns);
 
   }
+  function firstDraft(b) {
+    var box = el("div", "box"), open = false;
+    var head = el("button", "sm", "✦ " + T("What the AI wrote first", "AI가 처음 쓴 글"));
+    head.style.cssText = "width:100%;text-align:left;font-size:12px;font-weight:800;color:var(--sub);background:transparent;padding:0";
+    var body = el("div"); body.className = "hide"; body.style.marginTop = "10px";
+    body.innerHTML = '<div class="essay" style="opacity:.72">' +
+      ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
+        .map(function (k) { return b.report0[k]; }).filter(Boolean)
+        .map(function (t) { return '<p>' + esc(t) + '</p>'; }).join("") + '</div>' +
+      '<p class="note">' + T("This is the draft before any of your changes. Yours is above.",
+                             "고치기 전 초안이에요. 위에 있는 게 " + RN() + "가 만든 글이고요.") + '</p>';
+    head.onclick = function () { open = !open; body.classList.toggle("hide", !open); };
+    box.appendChild(head); box.appendChild(body);
+    return box;
+  }
+
   function editLog(b) {
     var box = el("div", "box"), open = false;
     var head = el("button", "sm", "✎ " + T("What I changed", "내가 고친 것") + " · " + b.edits.length);
@@ -932,7 +1005,7 @@
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 
-  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; S.edits = []; err(""); renderLibrary(); }
+  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; S.edits = []; S.editingId = null; S.editBase = null; S.asProfile = null; S.report0 = null; err(""); renderLibrary(); }
 
   // ---------- boot
   $("homeBtn").onclick = function () { resetRun(); show("library"); };

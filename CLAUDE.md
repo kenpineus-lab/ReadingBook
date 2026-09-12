@@ -45,8 +45,8 @@ if you add a prompt, call it there too or an adult will get a third-grader's sen
 
 **Icons** are per person and live on the server (`GET/POST /profiles`, a `settings` table
 keyed `icon:<profile>`), so a choice made on the tablet shows up on the laptop. The picker
-is a fixed grid of 24 (`ICONS`) — tapping only, because opening the emoji keyboard would put
-a text field on the one screen designed to need none. `who(id)` layers the chosen icon over
+is a fixed grid of 40 (`ICONS`) — faces first, then things — tapping only, because opening the
+emoji keyboard would put a text field on the one screen designed to need none. `who(id)` layers the chosen icon over
 the default, so everything that renders a profile picks it up for free. The server's `PROFILES`
 tuple must list the same ids. Han's shelf is Dad's, for testing.
 
@@ -72,6 +72,17 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
      to fix. `openCustom(k)` is the typed fallback — the reader dictates the change in
      their own words. Stars adjustable. `saveReport` POSTs to `/books` only after
      "Yes, that's my report!".
+- **Revision:** `editReport(b)` reopens a saved book — `✎` on any library row. It restores the
+  run's state (draft, order, audience, answers, language) and sets `S.editingId` / `S.editBase`,
+  so `saveReport` writes back to the **same id** and keeps the original `date`, `profile` and quiz
+  counts; `updatedAt` records the revision. `S.asProfile` points `RP()` at the book's owner, so
+  revising from the Family view still uses that person's level and voice. Three rules hold this
+  together and none of them is optional: **`report0` (the AI's untouched first draft) is frozen
+  and never rewritten** — `renderReport` shows it under "What the AI wrote first", which is the
+  app's whole claim made visible; **`edits` append, never reset**, so a rewrite a week later sits
+  in the same history; and the confirm screen says plainly that this is a revision. Legacy books
+  saved before this have no `report0` and we do **not** invent one from their current text.
+  There is deliberately no "write it again from scratch" button — that is gambling, not revising.
 - **Edit log:** every accepted rewrite is pushed to `S.edits` with `{section, fix, custom, before,
   after, lang, at}` and saved on the book as `edits`. This is the evidence that a person
   directed the machine — it is the point of the app, not telemetry. Keep it, and keep

@@ -212,6 +212,8 @@ class Book(BaseModel):
     follow: list = []
     report: dict | None = None
     edits: list = []          # every AI rewrite the reader asked for, with before/after
+    report0: dict | None = None   # the AI's untouched first draft; never overwritten once set
+    updatedAt: str | None = None  # set when a saved report is revised later
     henryWins: int = 0
     aiWins: int = 0
 
