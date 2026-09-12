@@ -9,7 +9,8 @@ Owner: HAN (kenpineus-lab). Repo: https://github.com/kenpineus-lab/ReadingBook
 1. **The AI can be confidently wrong.** Every quiz question shows what the AI guessed and how sure it was. Henry checks the book. Never make the AI look infallible.
 2. **Writing in the AI era = directing + judging, not typing.** Henry decides who the report is for and what order the parts go in *before* the AI writes. Then he edits with intent buttons (shorter / funnier / say why / use the name / don't spoil). Never auto-save a report he hasn't confirmed.
 3. **Tap, don't type.** He types slowly. Every step must work with buttons only. A text field is a fallback, never the main path.
-4. **Pride through numbers.** Stats are big, simple, and his: books read, this month, weeks in a row, AI beaten, genres. Don't bury them.
+4. **Pride through numbers.** Stats are big, simple, and theirs: books read, this month, weeks in a row, times they read it their own way, genres. Don't bury them.
+5. **A different answer is not a wrong answer.** The quiz is not scored and nobody wins it. Where the reader and the AI diverge, say "different" and colour it with the ribbon violet — never red, never a trophy, never win/lose. Red is reserved for actual errors. The point stands on its own: only one of the two actually read the book. `henryWins`/`aiWins` are legacy field names that now mean *different* and *same*; don't re-add scoring language on top of them.
 
 ## Layout
 
@@ -75,6 +76,7 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 - Edit `index.html` directly. Validate with: extract the `<script>` body and run `npx esbuild --target=es2017` on it. That catches syntax errors; there is no test suite.
 - Validate the server with `python -c "import ast; ast.parse(open('server/main.py').read())"` and, for behavior, the `fastapi.testclient` snippet in the README history: set `DB_PATH=/tmp/t.db FAMILY_CODE=1234`, then POST/GET/DELETE `/books` with the header.
 - Both languages: any new user-facing string goes through `T(en, ko)`. Any new AI prompt must branch on `L()` so Korean books get Korean questions (해요체).
+- Two themes, one palette contract: `:root` is night, `html[data-theme="day"]` overrides the same tokens, and `bl:theme` remembers the choice per device. Any new surface colour must be a token (`--well`, `--chip`, `--chip2`, `--dim`, `--ph`, `--onAccent`) — a raw hex in CSS or in a JS inline style will survive the theme swap and look broken in daylight.
 - Artwork lives in `assets/` as real files, not data URIs — they are same-origin on Pages and stay editable. The palette is warm library (leather, paper cream, gilt); no flat yellow.
 - `.hide` must stay `display:none!important` — `.cover{display:flex}` is defined after it and used to win.
 - Do not add a build step, a framework, or `localStorage` for book data. The whole point is that the page is a dumb client and the server + GitHub backup are the source of truth.

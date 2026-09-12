@@ -15,35 +15,55 @@
   /* A library at night: warm board, paper-cream text, gilt on the edges.
      Nothing here is lemon yellow - the accents come off book cloth and
      spine lettering. */
-  :root{
+  :root{                      /* night: the library after hours */
     --bg:#15110D; --bg2:#1A1611; --panel:#1E1A14; --panel2:#252017; --line:#332B21;
     --text:#EFE5D4; --sub:#9C8B75; --ink:#D7CBB6;
+    --well:#211C15;    /* inset surfaces - stat tiles, inputs, report sections */
+    --chip:#251F17; --chip2:#2A2318; --dim:#241E17; --ph:#6E6151;
     --amber:#D69447;   /* tan leather - the primary action */
-    --green:#84A98C;   /* library green - confirm */
+    --green:#84A98C;   /* library green - agreement */
     --gold:#D9B45B;    /* gilt - stars, rules */
-    --red:#C4614B;     /* book cloth */
-    --violet:#A98BC4;  /* ribbon */
+    --red:#C4614B;     /* book cloth - errors only */
+    --violet:#A98BC4;  /* ribbon - where the two readings differ */
+    --onAccent:#1A1209;
+    --grain:overlay; --grainO:.05; --shelfO:.24;
     --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
+  }
+  html[data-theme="day"]{     /* daylight: the same library with the curtains open */
+    --bg:#EFE6D4; --bg2:#F7F0E2; --panel:#FFFCF4; --panel2:#FFFFFF; --line:#DCCCB0;
+    --text:#2C241A; --sub:#8A7A62; --ink:#3B3127;
+    --well:#F4ECDC; --chip:#EDE3CE; --chip2:#E7DBC2; --dim:#EDE4D3; --ph:#A4957E;
+    --amber:#C8823A; --green:#5E8A6A; --gold:#A8801F; --red:#B04E38; --violet:#7A57A3;
+    --onAccent:#26190A;
+    --grain:multiply; --grainO:.07; --shelfO:.20;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
   body{margin:0;color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
     background:
       radial-gradient(120% 70% at 50% -12%, rgba(217,180,91,.13) 0%, rgba(217,180,91,.04) 38%, transparent 68%),
-      linear-gradient(180deg,#1A1611 0%, var(--bg) 46%, #100D0A 100%);
+      linear-gradient(180deg, var(--bg2) 0%, var(--bg) 46%, #100D0A 100%);
     background-attachment:fixed;min-height:100vh}
+  html[data-theme="day"] body{
+    background:
+      radial-gradient(120% 70% at 50% -10%, rgba(255,255,255,.75) 0%, rgba(255,250,240,.35) 40%, transparent 70%),
+      linear-gradient(180deg, var(--bg2) 0%, var(--bg) 52%, #E4D9C3 100%);
+    background-attachment:fixed}
+  html[data-theme="day"] .box{box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 8px 20px -16px rgba(70,52,28,.55)}
   /* pressed-paper grain over the whole ground */
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-    background:url(assets/paper.svg) repeat;background-size:220px 220px;opacity:.05;mix-blend-mode:overlay}
+    background:url(assets/paper.svg) repeat;background-size:220px 220px;opacity:var(--grainO);mix-blend-mode:var(--grain)}
   /* the shelf sits at the foot of the page, well behind the reading */
   .shelf{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;z-index:0;
     background:url(assets/shelf.svg) repeat-x bottom center;background-size:auto 120px;
-    opacity:.24;-webkit-mask-image:linear-gradient(180deg,transparent,#000 78%);
+    opacity:var(--shelfO);-webkit-mask-image:linear-gradient(180deg,transparent,#000 78%);
     mask-image:linear-gradient(180deg,transparent,#000 78%)}
   .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:20px 15px 150px}
 
   .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
   .mark{width:32px;height:27px;flex-shrink:0}
+  html[data-theme="day"] .mark{filter:saturate(1.15) brightness(.62)}
+  html[data-theme="day"] h1{text-shadow:none}
   h1{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;
     color:var(--gold);margin:0;text-shadow:0 1px 0 rgba(0,0,0,.5)}
   .tag{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sub);
@@ -55,17 +75,17 @@
 
   .big{width:100%;padding:15px;border-radius:11px;border:none;font-size:15px;font-weight:700;
     cursor:pointer;font-family:inherit;letter-spacing:.01em}
-  .amber{background:linear-gradient(180deg,#E0A257,var(--amber));color:#1A1209;
+  .amber{background:linear-gradient(180deg,#E0A257,var(--amber));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(214,148,71,.8)}
-  .green{background:linear-gradient(180deg,#92B79A,var(--green));color:#14200F;
+  .green{background:linear-gradient(180deg,#92B79A,var(--green));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
-  .dark{background:#241E17;color:var(--amber);border:1px solid var(--line)}
-  .plain{background:#241E17;color:var(--text);border:1px solid var(--line)}
-  .sm{background:#251F17;color:var(--sub);border:none;border-radius:9px;padding:8px 12px;
+  .dark{background:var(--dim);color:var(--amber);border:1px solid var(--line)}
+  .plain{background:var(--dim);color:var(--text);border:1px solid var(--line)}
+  .sm{background:var(--chip);color:var(--sub);border:none;border-radius:9px;padding:8px 12px;
     font-size:12px;cursor:pointer;font-family:inherit}
 
   .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:10px;
-    background:#211C15;border:1px solid var(--line);color:var(--text);font-size:14px;
+    background:var(--well);border:1px solid var(--line);color:var(--text);font-size:14px;
     cursor:pointer;font-family:inherit;line-height:1.45}
   .opt b{color:var(--sub);margin-right:9px;font-family:var(--serif)}
   .opt.on{background:rgba(214,148,71,.15);border-color:var(--amber)}.opt.on b{color:var(--amber)}
@@ -73,7 +93,7 @@
   .dash{width:100%;padding:11px;border-radius:10px;background:transparent;border:1px dashed var(--line);
     color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit}
 
-  .bar{display:flex;gap:5px;margin-bottom:16px}.bar i{flex:1;height:3px;border-radius:2px;background:#2C251C}
+  .bar{display:flex;gap:5px;margin-bottom:16px}.bar i{flex:1;height:3px;border-radius:2px;background:var(--dim)}
   .bar i.on{background:var(--amber)}.bar i.v{background:var(--violet)}
 
   .q{font-family:var(--serif);font-size:19px;font-weight:400;line-height:1.5;margin-bottom:17px;color:var(--text)}
@@ -84,22 +104,22 @@
   @keyframes s{to{transform:rotate(360deg)}}
 
   .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
-  .row>div{flex:1;background:#211C15;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:10px;padding:12px}
   .row .n{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
   .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em}
 
   .stars{display:flex;align-items:center;gap:8px;margin-bottom:4px}
   .stars .s{font-size:10px;color:var(--gold);width:44px}
-  .stars .t{flex:1;height:6px;background:#211C15;border-radius:4px;overflow:hidden}
+  .stars .t{flex:1;height:6px;background:var(--well);border-radius:4px;overflow:hidden}
   .stars .f{height:100%;background:linear-gradient(90deg,var(--gold),var(--amber))}
   .stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
 
   .book{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
   .book img,.book .ph{width:38px;height:52px;border-radius:3px;object-fit:cover;flex-shrink:0;
-    background:#211C15;box-shadow:2px 2px 8px -4px rgba(0,0,0,.9)}
+    background:var(--well);box-shadow:2px 2px 8px -4px rgba(0,0,0,.35)}
   .book .t{font-family:var(--serif);font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .book .m{font-size:11px;color:var(--sub);margin-top:1px}
-  .book .w{font-size:11px;color:var(--green);margin-top:2px}
+  .book .w{font-size:11px;color:var(--violet);margin-top:2px}
 
   .verdict{padding:13px;border-radius:10px;margin-top:12px}
   .verdict h4{margin:0 0 5px;font-size:13px}
@@ -114,10 +134,10 @@
   .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}.ans .aa{font-size:12px;margin-top:2px}
   .note{font-size:11px;color:var(--sub);line-height:1.65;margin:11px 0 0}
 
-  input{width:100%;padding:11px;border-radius:8px;background:#211C15;border:1px solid var(--line);
+  input{width:100%;padding:11px;border-radius:8px;background:var(--well);border:1px solid var(--line);
     color:var(--text);font-size:15px;outline:none;font-family:inherit}
   input:focus{border-color:var(--amber)}
-  input::placeholder{color:#6E6151}
+  input::placeholder{color:var(--ph)}
   .hide{display:none!important}   /* must beat .cover{display:flex} below */
   .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
   .cover img{width:64px;height:88px;object-fit:cover;border-radius:4px;border:1px solid var(--line);
@@ -129,7 +149,8 @@
   <div class="top">
     <img class="mark" src="assets/mark.svg" alt="" />
     <h1>BOOK LAB</h1>
-    <button id="homeBtn" class="sm hide" style="margin-left:auto">My books</button>
+    <button id="themeBtn" class="sm" style="margin-left:auto" title="Day / night">☾</button>
+    <button id="homeBtn" class="sm hide">My books</button>
   </div>
   <p class="tag">You read the book. Let's see how much the AI really knows about it.</p>
 
@@ -173,6 +194,14 @@
     code: localStorage.getItem("bl:code") || "",
     profile: localStorage.getItem("bl:profile") || "henry"
   };
+  // day or night - remembered per device, like the rest of the setup
+  function applyTheme(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    $("themeBtn").textContent = t === "day" ? "\u263c" : "\u263e";
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute("content", t === "day" ? "#EFE6D4" : "#15110D");
+  }
+
   function P() {
     var id = cfg.profile === "test" ? "han" : cfg.profile;   // "test" was the old name for Han's shelf
     return PROFILES.filter(function (x) { return x.id === id; }).length ? id : "henry";
@@ -289,8 +318,8 @@
           '<div style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + month + '</div><div class="l" style="font-size:11px;margin-top:6px">THIS MONTH</div></div>' +
         '</div>' +
         '<div class="row">' +
-          '<div><div class="n" style="color:var(--violet)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
-          '<div><div class="n" style="color:var(--amber)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">BEAT THE AI</div></div>' +
+          '<div><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
+          '<div><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
           (ko ? '<div><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' : '') +
         '</div>' +
         (genres.length ? '<div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
@@ -302,9 +331,9 @@
       S.books.forEach(function (x) {
         var r = el("div", "book");
         r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
-          '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w">You ' + (x.henryWins || 0) + ' — AI ' + (x.aiWins || 0) + '</div></div>';
+          '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
-        var db = el("button", "sm", "✕"); db.style.color = "#3E4C63"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api(qp("/books/" + x.id), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
+        var db = el("button", "sm", "✕"); db.style.color = "var(--sub)"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api(qp("/books/" + x.id), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
       L.appendChild(lst);
@@ -380,10 +409,14 @@
     if (S.picked) {
       var same = (q.mypick || "").toLowerCase().trim() === S.picked;
       var v = el("div", "verdict");
-      v.style.background = same ? "rgba(93,202,165,.1)" : "rgba(255,107,138,.1)"; v.style.border = "1px solid " + (same ? "var(--green)" : "var(--red)");
-      v.innerHTML = '<h4 style="color:' + (same ? "var(--green)" : "var(--red)") + '">' + (same ? T("The AI guessed the same thing.", "AI도 같은 걸 골랐어요.") : T("The AI guessed something else!", "AI는 다른 걸 골랐어요!")) + '</h4>' +
+      // different is the interesting outcome, not the wrong one - so it gets the
+      // ribbon colour, and nothing here is ever red
+      var c = same ? "var(--green)" : "var(--violet)";
+      v.style.background = same ? "rgba(132,169,140,.12)" : "rgba(169,139,196,.14)";
+      v.style.border = "1px solid " + c;
+      v.innerHTML = '<h4 style="color:' + c + '">' + (same ? T("You both thought the same.", "둘 다 같은 생각이었어요.") : T("You two thought differently.", "둘의 생각이 달랐어요.")) + '</h4>' +
         '<p>' + T("It picked", "AI가 고른 건") + ' <b style="color:var(--text)">' + esc((q.mypick || "?").toUpperCase()) + '</b>' + T(" and said it was " + esc((q.sure || "medium").toLowerCase()) + " confidence. ", "이고, 자신감은 " + esc((q.sure || "medium").toLowerCase()) + "이래요. ") +
-        (same ? T("You two agree — but you're the one who actually read it.", "둘이 같네요 — 하지만 진짜 읽은 건 헨리예요.") : T("You read the book. The AI only guessed. Check your book and see who's right.", "헨리는 읽었고 AI는 추측했어요. 책을 펴서 누가 맞는지 확인해봐요.")) + '</p>';
+        (same ? T("Same answer — and you're the one who actually read it.", "같은 답이에요 — 그리고 진짜 읽은 사람은 " + RN() + "이고요.") : T("You read the book; it only guessed. Open the book and see where the two of you part ways.", "" + RN() + "는 읽었고 AI는 추측했어요. 책을 펴서 어디서 갈렸는지 봐요.")) + '</p>';
       $("after").appendChild(v);
       var nb = el("button", "big amber", S.qi + 1 < S.qs.length ? T("Next question", "다음 문제") : T("Finish and write my report", "끝내고 독후감 쓰기")); nb.style.marginTop = "12px";
       nb.onclick = next; $("after").appendChild(nb);
@@ -521,18 +554,18 @@
       var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0];
       if (!sec || !r[k]) return;
       var d = el("div", "sec");
-      d.style.cssText = "padding:11px 12px;border-radius:11px;background:#211C15;margin-bottom:10px;cursor:pointer";
+      d.style.cssText = "padding:11px 12px;border-radius:11px;background:var(--well);margin-bottom:10px;cursor:pointer";
       d.innerHTML = '<h5>' + T(sec[1], sec[2]) + '</h5><p>' + esc(r[k]) + '</p><div class="fixrow hide" id="fix_' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div><div id="alt_' + k + '"></div>';
       d.onclick = function (e) { if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return; var row = $("fix_" + k); row.classList.toggle("hide"); };
       $("secs").appendChild(d);
       var row = $("fix_" + k);
       FIXES.forEach(function (f) {
-        var b = el("button", "sm", T(f[1], f[2])); b.style.cssText = "padding:8px 11px;font-size:12px;color:var(--amber);background:#2A2318";
+        var b = el("button", "sm", T(f[1], f[2])); b.style.cssText = "padding:8px 11px;font-size:12px;color:var(--amber);background:var(--chip2)";
         b.onclick = function (e) { e.stopPropagation(); fixSection(k, f); };
         row.appendChild(b);
       });
       var cust = el("button", "sm", "✏️ " + T("Tell it myself", "내가 말할게"));
-      cust.style.cssText = "padding:8px 11px;font-size:12px;font-weight:800;color:var(--violet);background:#2A2318";
+      cust.style.cssText = "padding:8px 11px;font-size:12px;font-weight:800;color:var(--violet);background:var(--chip2)";
       cust.onclick = function (e) { e.stopPropagation(); openCustom(k); };
       row.appendChild(cust);
     });
@@ -540,7 +573,7 @@
     var ok = el("button", "big green", "✓ " + T("Yes, that's my report!", "네, 이게 제 독후감이에요!")); ok.style.marginBottom = "9px";
     ok.onclick = saveReport; R.appendChild(ok);
     var st = el("div"); st.style.cssText = "display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:6px";
-    st.innerHTML = '<span style="font-size:11px;color:var(--sub)">' + T("Stars:", "별점:") + '</span>' + [1, 2, 3, 4, 5].map(function (n) { return '<button class="sm stb" data-n="' + n + '" style="padding:6px 9px;color:' + (n <= (parseInt(r.stars) || 3) ? "var(--gold)" : "#3E4C63") + '">★</button>'; }).join("");
+    st.innerHTML = '<span style="font-size:11px;color:var(--sub)">' + T("Stars:", "별점:") + '</span>' + [1, 2, 3, 4, 5].map(function (n) { return '<button class="sm stb" data-n="' + n + '" style="padding:6px 9px;color:' + (n <= (parseInt(r.stars) || 3) ? "var(--gold)" : "var(--line)") + '">★</button>'; }).join("");
     R.appendChild(st);
     Array.prototype.forEach.call(document.querySelectorAll(".stb"), function (b) { b.onclick = function () { S.draft.stars = b.getAttribute("data-n"); renderConfirm(); }; });
   }
@@ -597,9 +630,9 @@
   }
   function reportText(b) {
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
-    return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
+    return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Read by " + bookReader(b) + "   Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
       r.summary ? "What it's about\n" + r.summary : "", r.favorite ? "\nMy favorite part\n" + r.favorite : "", r.feeling ? "\nHow it made me feel\n" + r.feeling : "",
-      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz: " + bookReader(b) + " " + b.henryWins + " — AI " + b.aiWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
+      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz \u2014 same as the AI: " + b.aiWins + ", read it differently: " + b.henryWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
   }
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
@@ -612,9 +645,13 @@
     R.appendChild(box);
 
     var sc = el("div", "box");
-    sc.innerHTML = '<div style="font-size:12px;font-weight:800;margin-bottom:11px">🏆 You ' + b.henryWins + ' — AI ' + b.aiWins + '</div>' +
-      (b.answers || []).map(function (a) { return '<div class="ans"><span style="color:' + (a.aiSame ? "var(--sub)" : "var(--green)") + '">' + (a.aiSame ? "✓" : "✕") + '</span><div style="flex:1"><div class="qq">' + esc(a.q) + '</div><div class="aa">You said: ' + esc(a.pickedText) + '</div></div></div>'; }).join("") +
-      '<p class="note">Every green ✕ is a question where the AI guessed differently than you. The AI never read this book — it only knows what people wrote about books like it. That\'s why you check things yourself.</p>';
+    sc.innerHTML = '<div style="font-size:12px;font-weight:800;margin-bottom:11px">' +
+        '<span style="color:var(--sub)">= ' + T("same", "같은 생각") + ' ' + b.aiWins + '</span>' +
+        '<span style="color:var(--line)"> · </span>' +
+        '<span style="color:var(--violet)">\u2726 ' + T("different", "다른 생각") + ' ' + b.henryWins + '</span></div>' +
+      (b.answers || []).map(function (a) { return '<div class="ans"><span style="color:' + (a.aiSame ? "var(--sub)" : "var(--violet)") + ';font-weight:800">' + (a.aiSame ? "=" : "\u2726") + '</span><div style="flex:1"><div class="qq">' + esc(a.q) + '</div><div class="aa">' + T("You said: ", "고른 답: ") + esc(a.pickedText) + '</div></div></div>'; }).join("") +
+      '<p class="note">' + T("Every \u2726 is a place where you and the AI read it differently. Neither of you is automatically right \u2014 but only one of you actually read the book. That\'s worth remembering.",
+                             "\u2726 는 " + RN() + "와 AI가 다르게 읽은 곳이에요. 누가 자동으로 맞는 건 아니에요 \u2014 다만 책을 진짜 읽은 사람은 한 명뿐이죠. 그걸 기억해요.") + '</p>';
     R.appendChild(sc);
 
     if ((b.edits || []).length) R.appendChild(editLog(b));
@@ -650,9 +687,9 @@
     var w = window.open("", "_blank"); if (!w) { err("Your browser blocked the print window."); return; }
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     var sec = function (l, t) { return t ? "<h2>" + l + "</h2><p>" + esc(t) + "</p>" : ""; };
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#b8860b;margin:22px 0 6px}p{margin:0;font-size:15px}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#b8860b;margin:22px 0 6px}p{margin:0;font-size:15px}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
       sec("What it's about", r.summary) + sec("My favorite part", r.favorite) + sec("How it made me feel", r.feeling) + sec("What I take from it", r.learned) + sec("Would I tell a friend?", r.recommend) +
-      '<div class="foot">Quiz: ' + esc(bookReader(b)) + ' ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
+      '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 
@@ -669,6 +706,11 @@
   };
   $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
   if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
+  applyTheme(localStorage.getItem("bl:theme") === "day" ? "day" : "night");
+  $("themeBtn").onclick = function () {
+    var t = document.documentElement.getAttribute("data-theme") === "day" ? "night" : "day";
+    localStorage.setItem("bl:theme", t); applyTheme(t);
+  };
   renderWho(); renderLibrary(); loadBooks(); show("library");
 })();
 </script>
