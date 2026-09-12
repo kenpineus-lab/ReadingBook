@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0A0D16" />
+<title>Book Lab</title>
+<style>
+  :root{--bg:#0A0D16;--panel:#0E1320;--line:#1E2738;--sub:#5C7A99;--text:#E6ECF5;
+    --gold:#FFD23F;--amber:#FFC24D;--green:#5DCAA5;--red:#FF6B8A;--violet:#B57BFF}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+  .wrap{max-width:620px;margin:0 auto;padding:16px 14px 48px}
+  .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  h1{font-size:20px;font-weight:900;letter-spacing:.1em;color:var(--gold);margin:0}
+  .tag{font-size:12px;color:var(--sub);margin:0 0 16px}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+  .big{width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
+  .amber{background:var(--amber);color:#0A0D16}.green{background:var(--green);color:#0A0D16}
+  .dark{background:#182033;color:var(--amber)}.plain{background:#182033;color:var(--text)}
+  .sm{background:#182033;color:var(--sub);border:none;border-radius:9px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+  .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:11px;background:#141C2E;
+    border:1px solid var(--line);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;line-height:1.4}
+  .opt b{color:var(--sub);margin-right:8px}
+  .opt.on{background:rgba(255,194,77,.16);border-color:var(--amber)}.opt.on b{color:var(--amber)}
+  .opt:disabled{cursor:default}.opt.dim{opacity:.45}
+  .dash{width:100%;padding:11px;border-radius:11px;background:transparent;border:1px dashed var(--line);
+    color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit}
+  .bar{display:flex;gap:5px;margin-bottom:14px}.bar i{flex:1;height:4px;border-radius:2px;background:#1E2738}
+  .bar i.on{background:var(--amber)}.bar i.v{background:var(--violet)}
+  .q{font-size:17px;font-weight:700;line-height:1.45;margin-bottom:16px}
+  .lbl{font-size:11px;color:var(--sub);letter-spacing:.1em;font-weight:700;margin-bottom:12px}
+  .err{border-color:var(--red)!important;padding:12px}.err p{font-size:12px;color:var(--red);margin:0}
+  .busy{display:flex;align-items:center;gap:10px;font-size:13px}
+  .spin{width:16px;height:16px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
+  .row>div{flex:1;background:#141C2E;border-radius:11px;padding:11px}
+  .row .n{font-size:26px;font-weight:900;line-height:1}.row .l{font-size:10px;color:var(--sub);margin-top:4px}
+  .stars{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .stars .s{font-size:10px;color:var(--gold);width:44px}.stars .t{flex:1;height:7px;background:#141C2E;border-radius:4px;overflow:hidden}
+  .stars .f{height:100%;background:var(--gold)}.stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
+  .book{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+  .book img,.book .ph{width:38px;height:52px;border-radius:5px;object-fit:cover;flex-shrink:0;background:#141C2E}
+  .book .t{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .book .m{font-size:11px;color:var(--sub)}.book .w{font-size:11px;color:var(--green);margin-top:2px}
+  .verdict{padding:13px;border-radius:11px;margin-top:12px}
+  .verdict h4{margin:0 0 5px;font-size:13px}.verdict p{margin:0;font-size:12px;color:#8B96A8;line-height:1.5}
+  .sec{margin-bottom:12px}.sec h5{font-size:11px;font-weight:700;color:var(--amber);margin:0 0 4px}.sec p{margin:0;font-size:14px;line-height:1.55;color:#D5DEEB}
+  .ans{display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
+  .ans .qq{font-size:12px;color:#8B96A8;line-height:1.4}.ans .aa{font-size:12px;margin-top:2px}
+  .note{font-size:11px;color:var(--sub);line-height:1.6;margin:11px 0 0}
+  input{width:100%;padding:11px;border-radius:9px;background:#141C2E;border:1px solid var(--line);color:var(--text);font-size:14px;outline:none;font-family:inherit}
+  .hide{display:none}
+  .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
+  .cover img{width:64px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span style="color:var(--gold);font-size:18px">📖</span>
+    <h1>BOOK LAB</h1>
+    <button id="homeBtn" class="sm hide" style="margin-left:auto">My books</button>
+  </div>
+  <p class="tag">You read the book. Let's see how much the AI really knows about it.</p>
+
+  <div id="setup" class="box hide">
+    <div class="lbl">ONE-TIME SETUP (for Dad)</div>
+    <p class="note" style="margin:0 0 10px">Paste the server address and the family code. They're kept on this device.</p>
+    <input id="srv" placeholder="https://your-app.up.railway.app" style="margin-bottom:8px" />
+    <input id="code" placeholder="family code" />
+    <button id="saveSetup" class="big amber" style="margin-top:12px">Save</button>
+  </div>
+
+  <div id="err" class="box err hide"><p id="errText"></p></div>
+  <div id="busy" class="box busy hide"><div class="spin"></div><span id="busyText"></span></div>
+
+  <div id="library"></div>
+  <div id="quiz" class="hide"></div>
+  <div id="follow" class="hide"></div>
+  <div id="plan" class="hide"></div>
+  <div id="report" class="hide"></div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  // ---------- config (server + family code live on this device only)
+  var cfg = { srv: localStorage.getItem("bl:srv") || "", code: localStorage.getItem("bl:code") || "" };
+  function needSetup() { return !cfg.srv || !cfg.code; }
+
+  // ---------- state
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null };
+
+  // ---------- server
+  async function api(path, opts) {
+    var r = await fetch(cfg.srv.replace(/\/$/, "") + path, Object.assign({ headers: { "Content-Type": "application/json", "x-family-code": cfg.code } }, opts || {}));
+    if (r.status === 401) throw new Error("Family code doesn't match. Ask Dad.");
+    if (!r.ok) throw new Error("Server said no (" + r.status + ")");
+    return r.json();
+  }
+  async function ai(system, messages, maxTokens) {
+    var d = await api("/ai", { method: "POST", body: JSON.stringify({ system: system, messages: messages, max_tokens: maxTokens || 1600 }) });
+    return d.text || "";
+  }
+
+  // ---------- parsing
+  function tag(raw, n) { var m = raw.match(new RegExp("<" + n + ">([\\s\\S]*?)<\\/" + n + ">", "i")); return m ? m[1].trim() : null; }
+  function kv(b) { if (!b) return null; var o = {}; b.split("\n").forEach(function (l) { var i = l.indexOf(":"); if (i > 0) { var k = l.slice(0, i).trim().toLowerCase(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; } }); return Object.keys(o).length ? o : null; }
+  function blocks(raw, n) { var out = [], re = new RegExp("<" + n + ">([\\s\\S]*?)<\\/" + n + ">", "gi"), m; while ((m = re.exec(raw)) !== null) { var p = kv(m[1]); if (p) out.push(p); } return out; }
+
+  // ---------- ui helpers
+  function show(id) { ["library", "quiz", "follow", "plan", "report"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); }); $("homeBtn").classList.toggle("hide", id === "library"); }
+  function busy(t) { $("busy").classList.toggle("hide", !t); $("busyText").textContent = t || ""; }
+  function err(t) { $("err").classList.toggle("hide", !t); $("errText").textContent = t || ""; }
+  function stars(n) { n = Math.max(1, Math.min(5, parseInt(n) || 3)); return "★".repeat(n); }
+
+  // ---------- library
+  async function loadBooks() {
+    if (needSetup()) return;
+    try { S.books = await api("/books"); } catch (e) { err(e.message); }
+    renderLibrary();
+  }
+
+  function renderLibrary() {
+    var L = $("library"); L.innerHTML = "";
+    var b = el("div", "box");
+    b.innerHTML = '<button id="photo" class="big amber">📷 Take a photo of your book</button>' +
+      '<input id="file" type="file" accept="image/*" capture="environment" class="hide" />' +
+      '<div id="coverBox" class="cover hide"><img id="coverImg" alt=""/><div style="flex:1;min-width:0"><div id="cTitle" style="font-size:15px;font-weight:800"></div><div id="cAuthor" style="font-size:12px;color:var(--sub)"></div></div></div>' +
+      '<div id="manual" class="hide" style="margin-top:12px"><input id="mtitle" placeholder="Type the book title" style="margin-bottom:8px"/><div style="display:flex;gap:8px"><button id="mko" class="sm">한글책</button><button id="men" class="sm">English</button><button id="mgo" class="big amber" style="flex:1;padding:10px;font-size:13px">Go</button></div></div>' +
+      '<button id="start" class="big green hide" style="margin-top:12px">Start with this book ›</button>';
+    L.appendChild(b);
+    $("photo").onclick = function () { $("file").click(); };
+    $("file").onchange = onPhoto;
+    $("start").onclick = function () { startQuiz(); };
+    $("mko").onclick = function () { S.lang = "ko"; $("mko").style.color = "var(--amber)"; $("men").style.color = ""; };
+    $("men").onclick = function () { S.lang = "en"; $("men").style.color = "var(--amber)"; $("mko").style.color = ""; };
+    $("mgo").onclick = function () { var t = $("mtitle").value.trim(); if (!t) return; S.title = t; S.author = ""; S.lang = S.lang || "en"; startQuiz(); };
+    if (S.title) showCover();
+
+    if (S.books.length) {
+      var now = new Date(), ym = now.toISOString().slice(0, 7);
+      var month = S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; }).length;
+      var w = S.books.reduce(function (a, x) { return a + (x.henryWins || 0); }, 0);
+      var aw = S.books.reduce(function (a, x) { return a + (x.aiWins || 0); }, 0);
+
+      // weeks in a row with at least one book
+      var weeks = {}; S.books.forEach(function (x) { var d = new Date(x.date); var wk = Math.floor((d - new Date(d.getFullYear(), 0, 1)) / 6048e5); weeks[d.getFullYear() + "-" + wk] = 1; });
+      var streak = 0, d0 = new Date();
+      for (var i = 0; i < 52; i++) { var dd = new Date(d0 - i * 6048e5); var key = dd.getFullYear() + "-" + Math.floor((dd - new Date(dd.getFullYear(), 0, 1)) / 6048e5); if (weeks[key]) streak++; else if (i > 0) break; }
+
+      // genres
+      var G = {}; S.books.forEach(function (x) { var g = x.genre || "other"; G[g] = (G[g] || 0) + 1; });
+      var genres = Object.keys(G).sort(function (a, b) { return G[b] - G[a]; });
+      var GN = { adventure: ["Adventure", "모험", "🧭"], fantasy: ["Fantasy", "판타지", "🐉"], funny: ["Funny", "웃긴 책", "😂"], animals: ["Animals", "동물", "🐾"], science: ["Science", "과학", "🔬"], mystery: ["Mystery", "미스터리", "🔍"], friendship: ["Friendship", "우정", "🤝"], sports: ["Sports", "스포츠", "⚽"], history: ["History", "역사", "🏛️"], scary: ["Scary", "무서운 책", "👻"], other: ["Other", "기타", "📚"] };
+      var ko = S.books.filter(function (x) { return x.lang === "ko"; }).length;
+      var maxG = G[genres[0]] || 1;
+
+      var st = el("div", "box");
+      st.innerHTML =
+        '<div class="row" style="margin-bottom:10px">' +
+          '<div style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--gold)">' + S.books.length + '</div><div class="l" style="font-size:11px;margin-top:6px">BOOKS READ</div></div>' +
+          '<div style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + month + '</div><div class="l" style="font-size:11px;margin-top:6px">THIS MONTH</div></div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<div><div class="n" style="color:var(--violet)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
+          '<div><div class="n" style="color:var(--amber)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">BEAT THE AI</div></div>' +
+          (ko ? '<div><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' : '') +
+        '</div>' +
+        (genres.length ? '<div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
+          genres.slice(0, 5).map(function (g) { var m = GN[g] || GN.other; return '<div class="stars" style="margin-bottom:6px"><span style="font-size:13px;width:22px">' + m[2] + '</span><span style="font-size:12px;width:88px;color:var(--text)">' + m[0] + '</span><div class="t" style="height:10px"><div class="f" style="width:' + (G[g] / maxG * 100) + '%;background:var(--green)"></div></div><span class="c" style="font-size:12px;color:var(--text);width:20px">' + G[g] + '</span></div>'; }).join("") : "");
+      L.appendChild(st);
+
+      var lst = el("div", "box");
+      lst.innerHTML = '<div class="lbl">BOOKS YOU\'VE FINISHED · ' + S.books.length + '</div>';
+      S.books.forEach(function (x) {
+        var r = el("div", "book");
+        r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
+          '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w">You ' + (x.henryWins || 0) + ' — AI ' + (x.aiWins || 0) + '</div></div>';
+        var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
+        var db = el("button", "sm", "✕"); db.style.color = "#3E4C63"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api("/books/" + x.id, { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
+        r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
+      });
+      L.appendChild(lst);
+    }
+  }
+  function showCover() {
+    $("coverBox").classList.remove("hide");
+    if (S.cover) $("coverImg").src = S.cover; else $("coverImg").removeAttribute("src");
+    $("cTitle").textContent = S.title || "…"; $("cAuthor").textContent = S.author || "";
+    $("start").classList.toggle("hide", !S.title);
+  }
+
+  // ---------- photo → title
+  async function onPhoto(e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    err(""); busy("Looking at your book...");
+    try {
+      var b64 = await new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(",")[1]); }; r.onerror = function () { rej(new Error("read failed")); }; r.readAsDataURL(f); });
+      S.cover = "data:" + f.type + ";base64," + b64;
+      var raw = await ai('You read a photo of a book cover and name the book. Reply in this format only:\n<book>\ntitle: (the title exactly as printed, or unknown)\nauthor: (the author, or unknown)\nlanguage: (en or ko)\n</book>',
+        [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: f.type || "image/jpeg", data: b64 } }, { type: "text", text: "What book is this?" }] }], 300);
+      var b = kv(tag(raw, "book"));
+      if (b && b.title && b.title.toLowerCase() !== "unknown") {
+        S.title = b.title; S.author = (b.author && b.author.toLowerCase() !== "unknown") ? b.author : "";
+        S.lang = (b.language || "en").toLowerCase().indexOf("ko") === 0 ? "ko" : "en";
+        showCover();
+        busy(""); return startQuiz();
+      }
+      err("I couldn't read that cover. Try again with better light, or type the title below.");
+      $("manual").classList.remove("hide");
+    } catch (x) { err(x.message || "Something went wrong reading the photo."); }
+    busy("");
+  }
+
+  // ---------- quiz
+  function L() { return S.lang === "ko" ? "ko" : "en"; }
+  function T(en, ko) { return L() === "ko" ? ko : en; }
+
+  async function startQuiz() {
+    if (!S.title) return;
+    err(""); busy(T("Making your questions...", "문제를 만드는 중..."));
+    try {
+      var langNote = L() === "ko"
+        ? "This is a KOREAN book. Write everything — questions, choices, genre — in simple Korean a Korean 3rd grader reads easily (반말 아님, 존댓말 아님 — just plain 해요체)."
+        : "Write everything in simple English a 3rd grader knows.";
+      var raw = await ai('You make reading quizzes for Henry, a 3rd grader. He just read "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\n' + langNote + '\n\nFirst, tag the book:\n<meta>\ngenre: (ONE word from: adventure, fantasy, funny, animals, science, mystery, friendship, sports, history, scary, other)\nkind: (fiction or nonfiction)\n</meta>\n\nThen write 5 multiple-choice questions about this book.\nMix them up: what happened, who did what, why someone did something, how a character felt, what the book is really about.\n\nImportant: you have NOT actually read this book — you only know about it. So for each question, also say which answer YOU think is right and how sure you are.\nIf you truly don\'t know the book, still write questions a reader could answer, and mark your confidence low.\n\nUse exactly this format, five times:\n<q>\ntext: (the question)\na: (option)\nb: (option)\nc: (option)\nd: (option)\nmypick: (a, b, c, or d — what you think)\nsure: (high, medium, or low)\n</q>',
+        [{ role: "user", content: "Make the quiz" }], 2200);
+      var meta = kv(tag(raw, "meta")) || {};
+      S.genre = (meta.genre || "other").toLowerCase().trim();
+      S.kind = (meta.kind || "fiction").toLowerCase().trim();
+      var qs = blocks(raw, "q").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 5);
+      if (!qs.length) throw new Error("no questions");
+      S.qs = qs; S.qi = 0; S.ans = []; S.picked = null;
+      renderQuiz(); show("quiz");
+    } catch (x) { err(T("I couldn't make questions for that book. Try again.", "이 책 문제를 못 만들었어요. 다시 해볼래요?")); }
+    busy("");
+  }
+
+  function renderQuiz() {
+    var q = S.qs[S.qi], Q = $("quiz"); Q.innerHTML = "";
+    var b = el("div", "box");
+    b.innerHTML = '<div class="bar">' + S.qs.map(function (_, i) { return '<i class="' + (i <= S.qi ? "on" : "") + '"></i>'; }).join("") + '</div>' +
+      '<div style="display:flex;align-items:center;font-size:11px;color:var(--sub);margin-bottom:6px"><span style="flex:1">' + esc(S.title) + ' · ' + T("Question", "문제") + ' ' + (S.qi + 1) + ' / ' + S.qs.length + '</span><button id="langSw" class="sm" style="padding:4px 8px;font-size:10px">' + (L() === "ko" ? "English?" : "한글로?") + '</button></div>' +
+      '<div class="q">' + esc(q.text) + '</div><div id="opts"></div><div id="after"></div>';
+    Q.appendChild(b);
+    $("langSw").onclick = function () { S.lang = L() === "ko" ? "en" : "ko"; startQuiz(); };
+    ["a", "b", "c", "d"].forEach(function (k) {
+      var o = el("button", "opt" + (S.picked === k ? " on" : "") + (S.picked && S.picked !== k ? " dim" : ""), "<b>" + k.toUpperCase() + "</b>" + esc(q[k]));
+      o.disabled = !!S.picked;
+      o.onclick = function () { pick(k); };
+      $("opts").appendChild(o);
+    });
+    if (S.picked) {
+      var same = (q.mypick || "").toLowerCase().trim() === S.picked;
+      var v = el("div", "verdict");
+      v.style.background = same ? "rgba(93,202,165,.1)" : "rgba(255,107,138,.1)"; v.style.border = "1px solid " + (same ? "var(--green)" : "var(--red)");
+      v.innerHTML = '<h4 style="color:' + (same ? "var(--green)" : "var(--red)") + '">' + (same ? T("The AI guessed the same thing.", "AI도 같은 걸 골랐어요.") : T("The AI guessed something else!", "AI는 다른 걸 골랐어요!")) + '</h4>' +
+        '<p>' + T("It picked", "AI가 고른 건") + ' <b style="color:var(--text)">' + esc((q.mypick || "?").toUpperCase()) + '</b>' + T(" and said it was " + esc((q.sure || "medium").toLowerCase()) + " confidence. ", "이고, 자신감은 " + esc((q.sure || "medium").toLowerCase()) + "이래요. ") +
+        (same ? T("You two agree — but you're the one who actually read it.", "둘이 같네요 — 하지만 진짜 읽은 건 헨리예요.") : T("You read the book. The AI only guessed. Check your book and see who's right.", "헨리는 읽었고 AI는 추측했어요. 책을 펴서 누가 맞는지 확인해봐요.")) + '</p>';
+      $("after").appendChild(v);
+      var nb = el("button", "big amber", S.qi + 1 < S.qs.length ? T("Next question", "다음 문제") : T("Finish and write my report", "끝내고 독후감 쓰기")); nb.style.marginTop = "12px";
+      nb.onclick = next; $("after").appendChild(nb);
+    }
+  }
+  function pick(k) {
+    if (S.picked) return; S.picked = k; var q = S.qs[S.qi];
+    S.ans.push({ q: q.text, picked: k, pickedText: q[k], aiPick: q.mypick, aiSame: (q.mypick || "").toLowerCase().trim() === k, sure: q.sure });
+    renderQuiz();
+  }
+  function next() { if (S.qi + 1 < S.qs.length) { S.qi++; S.picked = null; renderQuiz(); } else makeFollowups(); }
+
+  // ---------- follow-up (feelings)
+  async function makeFollowups() {
+    busy(T("The AI wants to ask you a few things...", "AI가 몇 가지 더 물어보고 싶대요..."));
+    try {
+      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → Henry picked: " + a.pickedText; }).join("\n");
+      var raw = await ai('Henry is a 3rd grader who just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\nHe answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+        [{ role: "user", content: "Ask him" }], 1200);
+      var fq = blocks(raw, "fq").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 3);
+      if (!fq.length) { busy(""); return makeReport(); }
+      S.fqs = fq; S.fi = 0; S.fans = [];
+      renderFollow(); show("follow");
+    } catch (x) { busy(""); return makeReport(); }
+    busy("");
+  }
+  function renderFollow() {
+    var q = S.fqs[S.fi], F = $("follow"); F.innerHTML = "";
+    var b = el("div", "box");
+    b.innerHTML = '<div class="bar">' + S.fqs.map(function (_, i) { return '<i class="' + (i <= S.fi ? "v" : "") + '"></i>'; }).join("") + '</div>' +
+      '<div style="font-size:11px;color:var(--violet);margin-bottom:8px">✦ ' + T("Only you can answer this one", "이건 헨리만 답할 수 있어요") + ' — ' + (S.fi + 1) + ' / ' + S.fqs.length + '</div>' +
+      '<div class="q">' + esc(q.text) + '</div><div id="fopts"></div>';
+    F.appendChild(b);
+    ["a", "b", "c", "d"].forEach(function (L) { var o = el("button", "opt", esc(q[L])); o.onclick = function () { answerFollow(L); }; $("fopts").appendChild(o); });
+    var rr = el("button", "dash", T("None of these fit me — show other choices", "다 아닌데… 다른 걸로 보여줘")); rr.onclick = reroll; $("fopts").appendChild(rr);
+  }
+  function answerFollow(L) {
+    var q = S.fqs[S.fi]; S.fans.push({ q: q.text, answer: q[L] });
+    if (S.fi + 1 < S.fqs.length) { S.fi++; renderFollow(); } else { renderPlan(); show("plan"); }
+  }
+
+  // ---------- plan the writing: who reads it, and what order
+  function renderPlan() {
+    S.audience = S.audience || null; S.order = S.order || [];
+    var P = $("plan"); P.innerHTML = "";
+    var box = el("div", "box");
+    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + T("BEFORE THE AI WRITES", "AI가 쓰기 전에") + '</div>' +
+      '<div class="q" style="margin-bottom:10px">' + T("Who is going to read this?", "이 글은 누가 읽을 거예요?") + '</div><div id="aud" style="display:flex;gap:8px;margin-bottom:22px"></div>' +
+      '<div class="q" style="margin-bottom:6px">' + T("What do you want to say first?", "뭐부터 말할래요?") + '</div>' +
+      '<p class="note" style="margin:0 0 12px">' + T("Tap the parts in the order you want them. Pick as many as you like.", "말하고 싶은 순서대로 눌러요. 몇 개든 괜찮아요.") + '</p>' +
+      '<div id="parts"></div><div id="orderShow" style="min-height:22px;font-size:12px;color:var(--amber);margin:6px 0 14px"></div>';
+    P.appendChild(box);
+
+    var AUD = [["teacher", T("My teacher", "선생님"), "🍎"], ["friend", T("A friend", "친구"), "👦"], ["me", T("Just me", "나만"), "📓"]];
+    AUD.forEach(function (a) {
+      var b = el("button", "opt", '<span style="font-size:18px;margin-right:8px">' + a[2] + '</span>' + a[1]);
+      b.style.cssText = "flex:1;text-align:center;padding:14px 6px;margin:0;font-size:13px" + (S.audience === a[0] ? ";background:rgba(255,194,77,.16);border-color:var(--amber)" : "");
+      b.onclick = function () { S.audience = a[0]; renderPlan(); };
+      $("aud").appendChild(b);
+    });
+
+    SECTIONS.forEach(function (sec) {
+      var k = sec[0], idx = S.order.indexOf(k);
+      var b = el("button", "opt", (idx >= 0 ? '<b style="color:var(--amber)">' + (idx + 1) + '</b>' : '<b>·</b>') + T(sec[1], sec[2]));
+      if (idx >= 0) b.classList.add("on");
+      b.onclick = function () { if (idx >= 0) S.order.splice(idx, 1); else S.order.push(k); renderPlan(); };
+      $("parts").appendChild(b);
+    });
+    $("orderShow").textContent = S.order.length ? S.order.map(function (k, i) { var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0]; return (i + 1) + ". " + T(sec[1], sec[2]); }).join("  →  ") : "";
+
+    var go = el("button", "big amber", T("OK, write it like that", "좋아요, 그렇게 써줘"));
+    go.disabled = !S.audience || !S.order.length; go.style.opacity = go.disabled ? .4 : 1;
+    go.onclick = makeReport; P.appendChild(go);
+    var skip = el("button", "dash", T("Just write it — I'll fix it after", "그냥 써줘 — 나중에 고칠게")); skip.style.marginTop = "8px";
+    skip.onclick = function () { S.audience = S.audience || "me"; S.order = SECTIONS.map(function (x) { return x[0]; }); makeReport(); };
+    P.appendChild(skip);
+  }
+  async function reroll() {
+    var q = S.fqs[S.fi]; busy(T("Thinking of other choices...", "다른 보기를 생각하는 중..."));
+    try {
+      var raw = await ai('Henry (3rd grader) was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' Sound like a kid.\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+        [{ role: "user", content: "Other choices please" }], 600);
+      var f = blocks(raw, "fq")[0]; if (f && f.a) { f.text = q.text; S.fqs[S.fi] = f; renderFollow(); }
+    } catch (x) { }
+    busy("");
+  }
+
+  // ---------- report
+  var SECTIONS = [["summary", "What it's about", "무슨 이야기예요?"], ["favorite", "My favorite part", "제일 좋았던 부분"], ["feeling", "How it made me feel", "읽고 나서 느낌"], ["learned", "What I take from it", "배운 것"], ["recommend", "Would I tell a friend?", "친구에게 추천할까?"]];
+
+  async function makeReport() {
+    busy(T("Writing your book report...", "독후감을 쓰는 중..."));
+    try {
+      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + "\n   Henry answered: " + a.pickedText; }).join("\n");
+      var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  Henry said: " + a.answer; }).join("\n") : "(he didn't add anything)";
+      var AUDN = { teacher: "his teacher — so a little more careful and complete, but still his own words", friend: "a friend — so casual, fun, like he's telling them at recess", me: "just himself — a private note, honest, can be short" };
+      var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
+      var DESC = { summary: "(2 sentences about what the book is about, based on his answers)", favorite: "(1-2 sentences about the part or character he liked, in his voice)", feeling: "(1-2 sentences about how the book made him feel, based on what he said)", learned: "(1 sentence about what he might take away from it)", recommend: "(1 short sentence — would he tell a friend to read it, and why)" };
+      var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
+      var raw = await ai('You help Henry, a 3rd grader, write a short book report about a book he just finished.\nUse his own answers below. Write it in HIS voice — simple, honest, like a 3rd grader wrote it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\nHenry decided the ORDER himself. Write ONLY these parts, in exactly this order, and make them flow into each other:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
+        [{ role: "user", content: "Write the report" }], 900);
+      var r = kv(tag(raw, "report"));
+      if (!r) throw new Error("no report");
+      S.draft = r;
+      renderConfirm(); show("report");
+    } catch (x) { err(T("Couldn't write the report. Try once more.", "독후감을 못 썼어요. 한 번 더 해볼래요?")); }
+    busy("");
+  }
+
+  // Henry reads the draft and says yes, or fixes one part at a time
+  var FIXES = [
+    ["shorter", "Shorter", "더 짧게", "Make it shorter. Cut it to about half."],
+    ["funnier", "Funnier", "더 재밌게", "Make it funnier, the way a kid would joke about it."],
+    ["why", "Say why", "왜 그런지", "Add the reason — WHY. Use what he actually answered."],
+    ["name", "Use the name", "이름 넣기", "Use the character's actual name instead of 'he' or 'the character'."],
+    ["nospoil", "Don't spoil", "결말 빼기", "Don't give away the ending or the big surprise. Keep it a secret for the reader."],
+    ["other", "Other ways", "다른 말로", "Say the same thing in a completely different way."],
+  ];
+
+  function renderConfirm() {
+    var r = S.draft, R = $("report"); R.innerHTML = "";
+    var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
+    var AUDL = { teacher: T("for my teacher", "선생님께"), friend: T("for a friend", "친구에게"), me: T("just for me", "나만 보기") };
+    var box = el("div", "box");
+    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + T("READ IT — IS THIS YOU?", "읽어봐요 — 헨리 말이 맞아요?") + '</div>' +
+      '<div style="font-size:17px;font-weight:900;line-height:1.25;margin-bottom:2px">' + esc(S.title) + '</div>' +
+      '<div style="font-size:11px;color:var(--sub);margin-bottom:4px">' + (AUDL[S.audience] || "") + '</div>' +
+      '<div style="font-size:15px;color:var(--gold);margin-bottom:14px">' + stars(r.stars) + '</div>' +
+      '<p class="note" style="margin:0 0 12px">' + T("Tap a part to change how it's written.", "고치고 싶은 부분을 눌러요.") + '</p><div id="secs"></div>';
+    R.appendChild(box);
+
+    order.forEach(function (k) {
+      var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0];
+      if (!sec || !r[k]) return;
+      var d = el("div", "sec");
+      d.style.cssText = "padding:11px 12px;border-radius:11px;background:#141C2E;margin-bottom:9px;cursor:pointer";
+      d.innerHTML = '<h5>' + T(sec[1], sec[2]) + '</h5><p>' + esc(r[k]) + '</p><div class="fixrow hide" id="fix_' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div><div id="alt_' + k + '"></div>';
+      d.onclick = function (e) { if (e.target.tagName === "BUTTON") return; var row = $("fix_" + k); row.classList.toggle("hide"); };
+      $("secs").appendChild(d);
+      var row = $("fix_" + k);
+      FIXES.forEach(function (f) {
+        var b = el("button", "sm", T(f[1], f[2])); b.style.cssText = "padding:8px 11px;font-size:12px;color:var(--amber);background:#1E2738";
+        b.onclick = function (e) { e.stopPropagation(); fixSection(k, f); };
+        row.appendChild(b);
+      });
+      var drop = el("button", "sm", T("Leave this part out", "이 부분 빼기")); drop.style.cssText = "padding:8px 11px;font-size:12px;color:var(--red);background:#1E2738";
+      drop.onclick = function (e) { e.stopPropagation(); delete S.draft[k]; renderConfirm(); };
+      row.appendChild(drop);
+    });
+
+    var ok = el("button", "big green", "✓ " + T("Yes, that's my report!", "네, 이게 제 독후감이에요!")); ok.style.marginBottom = "9px";
+    ok.onclick = saveReport; R.appendChild(ok);
+    var st = el("div"); st.style.cssText = "display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:6px";
+    st.innerHTML = '<span style="font-size:11px;color:var(--sub)">' + T("Stars:", "별점:") + '</span>' + [1, 2, 3, 4, 5].map(function (n) { return '<button class="sm stb" data-n="' + n + '" style="padding:6px 9px;color:' + (n <= (parseInt(r.stars) || 3) ? "var(--gold)" : "#3E4C63") + '">★</button>'; }).join("");
+    R.appendChild(st);
+    Array.prototype.forEach.call(document.querySelectorAll(".stb"), function (b) { b.onclick = function () { S.draft.stars = b.getAttribute("data-n"); renderConfirm(); }; });
+  }
+
+  async function fixSection(k, f) {
+    busy(T("Rewriting...", "다시 쓰는 중..."));
+    try {
+      var raw = await ai('Henry (3rd grader) is editing his book report about "' + S.title + '". This part:\n"' + S.draft[k] + '"\n\nHis instruction: ' + f[3] + '\n\nWhat he actually said about the book: ' + S.fans.map(function (a) { return a.answer; }).join(" / ") + '\nRewrite just that part following his instruction. Keep his voice. ' + (L() === "ko" ? "In Korean 해요체." : "Simple English.") + ' Do not add facts he never mentioned.\n<new>\n(the rewritten part)\n</new>',
+        [{ role: "user", content: "Rewrite" }], 400);
+      var nt = tag(raw, "new");
+      if (nt) { S.draft[k] = nt; renderConfirm(); }
+      else err(T("Couldn't rewrite that. Try another button.", "다시 못 썼어요. 다른 버튼을 눌러봐요."));
+    } catch (x) { err(T("Couldn't rewrite that.", "다시 못 썼어요.")); }
+    busy("");
+  }
+
+  async function saveReport() {
+    busy(T("Saving...", "저장하는 중..."));
+    try {
+      var wins = S.ans.filter(function (a) { return !a.aiSame; }).length;
+      var entry = { id: Date.now(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, henryWins: wins, aiWins: S.ans.length - wins };
+      await api("/books", { method: "POST", body: JSON.stringify(entry) });
+      S.report = entry; renderReport(); show("report");
+      loadBooks();
+    } catch (x) { err(T("Couldn't save: ", "저장 실패: ") + x.message); }
+    busy("");
+  }
+
+  function reportText(b) {
+    var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
+    return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
+      r.summary ? "What it's about\n" + r.summary : "", r.favorite ? "\nMy favorite part\n" + r.favorite : "", r.feeling ? "\nHow it made me feel\n" + r.feeling : "",
+      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz: Henry " + b.henryWins + " — AI " + b.aiWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
+  }
+  function renderReport() {
+    var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
+    var box = el("div", "box");
+    box.innerHTML = '<div style="display:flex;gap:13px;margin-bottom:14px">' + (b.cover ? '<img src="' + b.cover + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
+      '<div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--sub);letter-spacing:.12em">BOOK REPORT</div><div style="font-size:17px;font-weight:900;line-height:1.25;margin-top:3px">' + esc(b.title) + '</div>' +
+      (b.author ? '<div style="font-size:12px;color:var(--sub)">' + esc(b.author) + '</div>' : '') + '<div style="font-size:11px;color:var(--sub);margin-top:5px">Finished ' + esc(b.date) + '</div><div style="font-size:15px;color:var(--gold);margin-top:3px">' + stars(r.stars) + '</div></div></div>' +
+      ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; })).map(function (k) { var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0]; return sec ? [b.lang === "ko" ? sec[2] : sec[1], r[k]] : [null, null]; })
+        .filter(function (x) { return x[1]; }).map(function (x) { return '<div class="sec"><h5>' + x[0] + '</h5><p>' + esc(x[1]) + '</p></div>'; }).join("");
+    R.appendChild(box);
+
+    var sc = el("div", "box");
+    sc.innerHTML = '<div style="font-size:12px;font-weight:800;margin-bottom:11px">🏆 You ' + b.henryWins + ' — AI ' + b.aiWins + '</div>' +
+      (b.answers || []).map(function (a) { return '<div class="ans"><span style="color:' + (a.aiSame ? "var(--sub)" : "var(--green)") + '">' + (a.aiSame ? "✓" : "✕") + '</span><div style="flex:1"><div class="qq">' + esc(a.q) + '</div><div class="aa">You said: ' + esc(a.pickedText) + '</div></div></div>'; }).join("") +
+      '<p class="note">Every green ✕ is a question where the AI guessed differently than you. The AI never read this book — it only knows what people wrote about books like it. That\'s why you check things yourself.</p>';
+    R.appendChild(sc);
+
+    var btns = el("div"); btns.style.cssText = "display:flex;gap:9px;margin-bottom:10px";
+    var cp = el("button", "big green", "Send to Dad"); cp.style.fontSize = "13px";
+    cp.onclick = async function () { try { await navigator.clipboard.writeText(reportText(b)); busy("Copied! Paste it anywhere."); setTimeout(function () { busy(""); }, 1600); } catch (x) { err("Couldn't copy on this device."); } };
+    var pr = el("button", "big plain", "Print it"); pr.style.fontSize = "13px"; pr.onclick = function () { printReport(b); };
+    btns.appendChild(cp); btns.appendChild(pr); R.appendChild(btns);
+    var again = el("button", "big dark", "↻ Do another book"); again.onclick = function () { resetRun(); show("library"); }; R.appendChild(again);
+  }
+  function printReport(b) {
+    var w = window.open("", "_blank"); if (!w) { err("Your browser blocked the print window."); return; }
+    var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
+    var sec = function (l, t) { return t ? "<h2>" + l + "</h2><p>" + esc(t) + "</p>" : ""; };
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#b8860b;margin:22px 0 6px}p{margin:0;font-size:15px}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
+      sec("What it's about", r.summary) + sec("My favorite part", r.favorite) + sec("How it made me feel", r.feeling) + sec("What I take from it", r.learned) + sec("Would I tell a friend?", r.recommend) +
+      '<div class="foot">Quiz: Henry ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
+    w.document.close(); setTimeout(function () { w.print(); }, 400);
+  }
+
+  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; err(""); renderLibrary(); }
+
+  // ---------- boot
+  $("homeBtn").onclick = function () { resetRun(); show("library"); };
+  $("saveSetup").onclick = function () {
+    cfg.srv = $("srv").value.trim(); cfg.code = $("code").value.trim();
+    localStorage.setItem("bl:srv", cfg.srv); localStorage.setItem("bl:code", cfg.code);
+    $("setup").classList.add("hide"); loadBooks();
+  };
+  if (needSetup()) { $("setup").classList.remove("hide"); $("srv").value = cfg.srv; }
+  renderLibrary(); loadBooks(); show("library");
+})();
+</script>
+</body>
+</html>
