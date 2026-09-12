@@ -4,63 +4,130 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#0A0D16" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Book Lab" />
+<meta name="theme-color" content="#15110D" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="manifest" href="manifest.webmanifest" />
 <title>Book Lab</title>
 <style>
-  :root{--bg:#0A0D16;--panel:#0E1320;--line:#1E2738;--sub:#5C7A99;--text:#E6ECF5;
-    --gold:#FFD23F;--amber:#FFC24D;--green:#5DCAA5;--red:#FF6B8A;--violet:#B57BFF}
+  /* A library at night: warm board, paper-cream text, gilt on the edges.
+     Nothing here is lemon yellow - the accents come off book cloth and
+     spine lettering. */
+  :root{
+    --bg:#15110D; --bg2:#1A1611; --panel:#1E1A14; --panel2:#252017; --line:#332B21;
+    --text:#EFE5D4; --sub:#9C8B75; --ink:#D7CBB6;
+    --amber:#D69447;   /* tan leather - the primary action */
+    --green:#84A98C;   /* library green - confirm */
+    --gold:#D9B45B;    /* gilt - stars, rules */
+    --red:#C4614B;     /* book cloth */
+    --violet:#A98BC4;  /* ribbon */
+    --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
-  .wrap{max-width:620px;margin:0 auto;padding:16px 14px 48px}
-  .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-  h1{font-size:20px;font-weight:900;letter-spacing:.1em;color:var(--gold);margin:0}
-  .tag{font-size:12px;color:var(--sub);margin:0 0 16px}
-  .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
-  .big{width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
-  .amber{background:var(--amber);color:#0A0D16}.green{background:var(--green);color:#0A0D16}
-  .dark{background:#182033;color:var(--amber)}.plain{background:#182033;color:var(--text)}
-  .sm{background:#182033;color:var(--sub);border:none;border-radius:9px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:inherit}
-  .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:11px;background:#141C2E;
-    border:1px solid var(--line);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;line-height:1.4}
-  .opt b{color:var(--sub);margin-right:8px}
-  .opt.on{background:rgba(255,194,77,.16);border-color:var(--amber)}.opt.on b{color:var(--amber)}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:
+      radial-gradient(120% 70% at 50% -12%, rgba(217,180,91,.13) 0%, rgba(217,180,91,.04) 38%, transparent 68%),
+      linear-gradient(180deg,#1A1611 0%, var(--bg) 46%, #100D0A 100%);
+    background-attachment:fixed;min-height:100vh}
+  /* pressed-paper grain over the whole ground */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:url(assets/paper.svg) repeat;background-size:220px 220px;opacity:.05;mix-blend-mode:overlay}
+  /* the shelf sits at the foot of the page, well behind the reading */
+  .shelf{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;z-index:0;
+    background:url(assets/shelf.svg) repeat-x bottom center;background-size:auto 120px;
+    opacity:.24;-webkit-mask-image:linear-gradient(180deg,transparent,#000 78%);
+    mask-image:linear-gradient(180deg,transparent,#000 78%)}
+  .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:20px 15px 150px}
+
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .mark{width:32px;height:27px;flex-shrink:0}
+  h1{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;
+    color:var(--gold);margin:0;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+  .tag{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sub);
+    margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--line);line-height:1.5}
+
+  .box{background:linear-gradient(180deg,var(--panel2) 0%, var(--panel) 100%);
+    border:1px solid var(--line);border-radius:14px;padding:17px;margin-bottom:14px;
+    box-shadow:0 1px 0 rgba(255,240,214,.045) inset, 0 10px 26px -18px rgba(0,0,0,.9)}
+
+  .big{width:100%;padding:15px;border-radius:11px;border:none;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;letter-spacing:.01em}
+  .amber{background:linear-gradient(180deg,#E0A257,var(--amber));color:#1A1209;
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(214,148,71,.8)}
+  .green{background:linear-gradient(180deg,#92B79A,var(--green));color:#14200F;
+    box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
+  .dark{background:#241E17;color:var(--amber);border:1px solid var(--line)}
+  .plain{background:#241E17;color:var(--text);border:1px solid var(--line)}
+  .sm{background:#251F17;color:var(--sub);border:none;border-radius:9px;padding:8px 12px;
+    font-size:12px;cursor:pointer;font-family:inherit}
+
+  .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:10px;
+    background:#211C15;border:1px solid var(--line);color:var(--text);font-size:14px;
+    cursor:pointer;font-family:inherit;line-height:1.45}
+  .opt b{color:var(--sub);margin-right:9px;font-family:var(--serif)}
+  .opt.on{background:rgba(214,148,71,.15);border-color:var(--amber)}.opt.on b{color:var(--amber)}
   .opt:disabled{cursor:default}.opt.dim{opacity:.45}
-  .dash{width:100%;padding:11px;border-radius:11px;background:transparent;border:1px dashed var(--line);
+  .dash{width:100%;padding:11px;border-radius:10px;background:transparent;border:1px dashed var(--line);
     color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit}
-  .bar{display:flex;gap:5px;margin-bottom:14px}.bar i{flex:1;height:4px;border-radius:2px;background:#1E2738}
+
+  .bar{display:flex;gap:5px;margin-bottom:16px}.bar i{flex:1;height:3px;border-radius:2px;background:#2C251C}
   .bar i.on{background:var(--amber)}.bar i.v{background:var(--violet)}
-  .q{font-size:17px;font-weight:700;line-height:1.45;margin-bottom:16px}
-  .lbl{font-size:11px;color:var(--sub);letter-spacing:.1em;font-weight:700;margin-bottom:12px}
+
+  .q{font-family:var(--serif);font-size:19px;font-weight:400;line-height:1.5;margin-bottom:17px;color:var(--text)}
+  .lbl{font-size:10px;color:var(--sub);letter-spacing:.14em;font-weight:700;margin-bottom:12px;text-transform:uppercase}
   .err{border-color:var(--red)!important;padding:12px}.err p{font-size:12px;color:var(--red);margin:0}
   .busy{display:flex;align-items:center;gap:10px;font-size:13px}
   .spin{width:16px;height:16px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:s 1s linear infinite}
   @keyframes s{to{transform:rotate(360deg)}}
+
   .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
-  .row>div{flex:1;background:#141C2E;border-radius:11px;padding:11px}
-  .row .n{font-size:26px;font-weight:900;line-height:1}.row .l{font-size:10px;color:var(--sub);margin-top:4px}
+  .row>div{flex:1;background:#211C15;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .row .n{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
+  .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em}
+
   .stars{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-  .stars .s{font-size:10px;color:var(--gold);width:44px}.stars .t{flex:1;height:7px;background:#141C2E;border-radius:4px;overflow:hidden}
-  .stars .f{height:100%;background:var(--gold)}.stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
-  .book{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
-  .book img,.book .ph{width:38px;height:52px;border-radius:5px;object-fit:cover;flex-shrink:0;background:#141C2E}
-  .book .t{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .book .m{font-size:11px;color:var(--sub)}.book .w{font-size:11px;color:var(--green);margin-top:2px}
-  .verdict{padding:13px;border-radius:11px;margin-top:12px}
-  .verdict h4{margin:0 0 5px;font-size:13px}.verdict p{margin:0;font-size:12px;color:#8B96A8;line-height:1.5}
-  .sec{margin-bottom:12px}.sec h5{font-size:11px;font-weight:700;color:var(--amber);margin:0 0 4px}.sec p{margin:0;font-size:14px;line-height:1.55;color:#D5DEEB}
-  .ans{display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
-  .ans .qq{font-size:12px;color:#8B96A8;line-height:1.4}.ans .aa{font-size:12px;margin-top:2px}
-  .note{font-size:11px;color:var(--sub);line-height:1.6;margin:11px 0 0}
-  input{width:100%;padding:11px;border-radius:9px;background:#141C2E;border:1px solid var(--line);color:var(--text);font-size:14px;outline:none;font-family:inherit}
-  .hide{display:none}
+  .stars .s{font-size:10px;color:var(--gold);width:44px}
+  .stars .t{flex:1;height:6px;background:#211C15;border-radius:4px;overflow:hidden}
+  .stars .f{height:100%;background:linear-gradient(90deg,var(--gold),var(--amber))}
+  .stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
+
+  .book{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
+  .book img,.book .ph{width:38px;height:52px;border-radius:3px;object-fit:cover;flex-shrink:0;
+    background:#211C15;box-shadow:2px 2px 8px -4px rgba(0,0,0,.9)}
+  .book .t{font-family:var(--serif);font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .book .m{font-size:11px;color:var(--sub);margin-top:1px}
+  .book .w{font-size:11px;color:var(--green);margin-top:2px}
+
+  .verdict{padding:13px;border-radius:10px;margin-top:12px}
+  .verdict h4{margin:0 0 5px;font-size:13px}
+  .verdict p{margin:0;font-size:12px;color:var(--sub);line-height:1.55}
+
+  /* the report itself reads like a page of a book, not like an app screen */
+  .sec{margin-bottom:14px}
+  .sec h5{font-size:10px;font-weight:700;color:var(--amber);margin:0 0 5px;letter-spacing:.12em;text-transform:uppercase}
+  .sec p{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.68;color:var(--ink)}
+
+  .ans{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
+  .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}.ans .aa{font-size:12px;margin-top:2px}
+  .note{font-size:11px;color:var(--sub);line-height:1.65;margin:11px 0 0}
+
+  input{width:100%;padding:11px;border-radius:8px;background:#211C15;border:1px solid var(--line);
+    color:var(--text);font-size:15px;outline:none;font-family:inherit}
+  input:focus{border-color:var(--amber)}
+  input::placeholder{color:#6E6151}
+  .hide{display:none!important}   /* must beat .cover{display:flex} below */
   .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
-  .cover img{width:64px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .cover img{width:64px;height:88px;object-fit:cover;border-radius:4px;border:1px solid var(--line);
+    box-shadow:3px 3px 12px -6px rgba(0,0,0,.95)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <span style="color:var(--gold);font-size:18px">📖</span>
+    <img class="mark" src="assets/mark.svg" alt="" />
     <h1>BOOK LAB</h1>
     <button id="homeBtn" class="sm hide" style="margin-left:auto">My books</button>
   </div>
@@ -85,6 +152,8 @@
   <div id="report" class="hide"></div>
 </div>
 
+<div class="shelf" aria-hidden="true"></div>
+
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -93,18 +162,29 @@
 
   // ---------- config (server + family code live on this device only)
   var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
-  var PROFILES = [{ id: "henry", name: "Henry", icon: "📚" }, { id: "test", name: "Test", icon: "🧪" }];
+  var PROFILES = [
+    { id: "henry",   name: "Henry",   icon: "📚", level: "a 3rd grader" },
+    { id: "jeremy",  name: "Jeremy",  icon: "🚀", level: "a young reader" },
+    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "a young reader" },
+    { id: "han",     name: "Han",     icon: "☕", level: "an adult reader" }
+  ];
   var cfg = {
     srv: localStorage.getItem("bl:srv") || SRV,
     code: localStorage.getItem("bl:code") || "",
     profile: localStorage.getItem("bl:profile") || "henry"
   };
-  function P() { return cfg.profile === "test" ? "test" : "henry"; }
+  function P() {
+    var id = cfg.profile === "test" ? "han" : cfg.profile;   // "test" was the old name for Han's shelf
+    return PROFILES.filter(function (x) { return x.id === id; }).length ? id : "henry";
+  }
+  function RP() { return PROFILES.filter(function (x) { return x.id === P(); })[0] || PROFILES[0]; }
+  function RN() { return RP().name; }                        // whose report the AI is writing
+  function RL() { return RP().level; }
   function qp(path) { return path + (path.indexOf("?") < 0 ? "?" : "&") + "profile=" + P(); }
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [] };
 
   // ---------- server
   async function api(path, opts) {
@@ -133,14 +213,14 @@
 
   function renderWho() {
     var w = $("who"); w.innerHTML = "";
-    var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:8px";
-    var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);flex:1";
+    var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap";
+    var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);width:100%;margin-bottom:3px";
     row.appendChild(lab);
     PROFILES.forEach(function (pr) {
       var on = pr.id === P();
       var b = el("button", "sm", pr.icon + " " + pr.name);
-      b.style.cssText = "padding:6px 12px;font-size:12px;font-weight:800;" +
-        (on ? "color:var(--bg);background:" + (pr.id === "test" ? "var(--violet)" : "var(--amber)") + ";border-radius:8px"
+      b.style.cssText = "padding:7px 11px;font-size:12px;font-weight:800;border-radius:9px;" +
+        (on ? "color:var(--bg);background:" + (pr.id === "han" ? "var(--violet)" : "var(--amber)")
             : "color:var(--sub)");
       b.onclick = function () {
         if (pr.id === P()) return;
@@ -150,8 +230,8 @@
       row.appendChild(b);
     });
     w.appendChild(row);
-    if (P() === "test") {
-      var t = el("div", null, "Test profile \u2014 these books stay out of Henry's stats.");
+    if (P() === "han") {
+      var t = el("div", null, "Han's shelf \u2014 kept separate from the kids' books and stats.");
       t.style.cssText = "font-size:11px;color:var(--violet);margin-top:8px";
       w.appendChild(t);
     }
@@ -270,7 +350,7 @@
       var langNote = L() === "ko"
         ? "This is a KOREAN book. Write everything — questions, choices, genre — in simple Korean a Korean 3rd grader reads easily (반말 아님, 존댓말 아님 — just plain 해요체)."
         : "Write everything in simple English a 3rd grader knows.";
-      var raw = await ai('You make reading quizzes for Henry, a 3rd grader. He just read "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\n' + langNote + '\n\nFirst, tag the book:\n<meta>\ngenre: (ONE word from: adventure, fantasy, funny, animals, science, mystery, friendship, sports, history, scary, other)\nkind: (fiction or nonfiction)\n</meta>\n\nThen write 5 multiple-choice questions about this book.\nMix them up: what happened, who did what, why someone did something, how a character felt, what the book is really about.\n\nImportant: you have NOT actually read this book — you only know about it. So for each question, also say which answer YOU think is right and how sure you are.\nIf you truly don\'t know the book, still write questions a reader could answer, and mark your confidence low.\n\nUse exactly this format, five times:\n<q>\ntext: (the question)\na: (option)\nb: (option)\nc: (option)\nd: (option)\nmypick: (a, b, c, or d — what you think)\nsure: (high, medium, or low)\n</q>',
+      var raw = await ai('You make reading quizzes for ' + RN() + ', ' + RL() + '. They just read "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\n' + langNote + '\n\nFirst, tag the book:\n<meta>\ngenre: (ONE word from: adventure, fantasy, funny, animals, science, mystery, friendship, sports, history, scary, other)\nkind: (fiction or nonfiction)\n</meta>\n\nThen write 5 multiple-choice questions about this book.\nMix them up: what happened, who did what, why someone did something, how a character felt, what the book is really about.\n\nImportant: you have NOT actually read this book — you only know about it. So for each question, also say which answer YOU think is right and how sure you are.\nIf you truly don\'t know the book, still write questions a reader could answer, and mark your confidence low.\n\nUse exactly this format, five times:\n<q>\ntext: (the question)\na: (option)\nb: (option)\nc: (option)\nd: (option)\nmypick: (a, b, c, or d — what you think)\nsure: (high, medium, or low)\n</q>',
         [{ role: "user", content: "Make the quiz" }], 2200);
       var meta = kv(tag(raw, "meta")) || {};
       S.genre = (meta.genre || "other").toLowerCase().trim();
@@ -320,8 +400,8 @@
   async function makeFollowups() {
     busy(T("The AI wants to ask you a few things...", "AI가 몇 가지 더 물어보고 싶대요..."));
     try {
-      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → Henry picked: " + a.pickedText; }).join("\n");
-      var raw = await ai('Henry is a 3rd grader who just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\nHe answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → " + RN() + " picked: " + a.pickedText; }).join("\n");
+      var raw = await ai(RN() + ' is ' + RL() + ' who just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\nHe answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Ask him" }], 1200);
       var fq = blocks(raw, "fq").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 3);
       if (!fq.length) { busy(""); return makeReport(); }
@@ -384,7 +464,7 @@
   async function reroll() {
     var q = S.fqs[S.fi]; busy(T("Thinking of other choices...", "다른 보기를 생각하는 중..."));
     try {
-      var raw = await ai('Henry (3rd grader) was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' Sound like a kid.\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var raw = await ai(RN() + ' (' + RL() + ') was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' Sound like a kid.\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Other choices please" }], 600);
       var f = blocks(raw, "fq")[0]; if (f && f.a) { f.text = q.text; S.fqs[S.fi] = f; renderFollow(); }
     } catch (x) { }
@@ -397,13 +477,13 @@
   async function makeReport() {
     busy(T("Writing your book report...", "독후감을 쓰는 중..."));
     try {
-      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + "\n   Henry answered: " + a.pickedText; }).join("\n");
-      var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  Henry said: " + a.answer; }).join("\n") : "(he didn't add anything)";
+      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + "\n   " + RN() + " answered: " + a.pickedText; }).join("\n");
+      var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  " + RN() + " said: " + a.answer; }).join("\n") : "(he didn't add anything)";
       var AUDN = { teacher: "his teacher — so a little more careful and complete, but still his own words", friend: "a friend — so casual, fun, like he's telling them at recess", me: "just himself — a private note, honest, can be short" };
       var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
       var DESC = { summary: "(2 sentences about what the book is about, based on his answers)", favorite: "(1-2 sentences about the part or character he liked, in his voice)", feeling: "(1-2 sentences about how the book made him feel, based on what he said)", learned: "(1 sentence about what he might take away from it)", recommend: "(1 short sentence — would he tell a friend to read it, and why)" };
       var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
-      var raw = await ai('You help Henry, a 3rd grader, write a short book report about a book he just finished.\nUse his own answers below. Write it in HIS voice — simple, honest, like a 3rd grader wrote it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\nHenry decided the ORDER himself. Write ONLY these parts, in exactly this order, and make them flow into each other:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
+      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — simple, honest, the way they would say it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order, and make them flow into each other:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
         [{ role: "user", content: "Write the report" }], 900);
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
@@ -415,12 +495,14 @@
 
   // Henry reads the draft and says yes, or fixes one part at a time
   var FIXES = [
-    ["shorter", "Shorter", "더 짧게", "Make it shorter. Cut it to about half."],
-    ["funnier", "Funnier", "더 재밌게", "Make it funnier, the way a kid would joke about it."],
-    ["why", "Say why", "왜 그런지", "Add the reason — WHY. Use what he actually answered."],
-    ["name", "Use the name", "이름 넣기", "Use the character's actual name instead of 'he' or 'the character'."],
-    ["nospoil", "Don't spoil", "결말 빼기", "Don't give away the ending or the big surprise. Keep it a secret for the reader."],
-    ["other", "Other ways", "다른 말로", "Say the same thing in a completely different way."],
+    ["longer",  "Longer",        "더 길게",   "Make it longer. Add a sentence or two that build on what they already said — no new facts."],
+    ["detail",  "More detail",   "자세히",    "Add concrete detail — what happened, where, who. Only things they actually mentioned."],
+    ["funnier", "Funnier",       "더 재밌게", "Make it funnier, the way a kid would joke about it."],
+    ["why",     "Say why",       "왜 그런지", "Add the reason — WHY. Use what they actually answered."],
+    ["name",    "Use the name",  "이름 넣기", "Use the character's actual name instead of 'he' or 'the character'."],
+    ["feeling", "More feeling",  "느낌 더",   "Say more about how it made them feel, in their own words."],
+    ["easier",  "Simpler words", "쉬운 말로", "Use simpler, shorter words. Nothing a kid would have to look up."],
+    ["nospoil", "Don't spoil",   "결말 빼기", "Don't give away the ending or the big surprise. Keep it a secret for the reader."],
   ];
 
   function renderConfirm() {
@@ -439,19 +521,20 @@
       var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0];
       if (!sec || !r[k]) return;
       var d = el("div", "sec");
-      d.style.cssText = "padding:11px 12px;border-radius:11px;background:#141C2E;margin-bottom:9px;cursor:pointer";
+      d.style.cssText = "padding:11px 12px;border-radius:11px;background:#211C15;margin-bottom:10px;cursor:pointer";
       d.innerHTML = '<h5>' + T(sec[1], sec[2]) + '</h5><p>' + esc(r[k]) + '</p><div class="fixrow hide" id="fix_' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div><div id="alt_' + k + '"></div>';
-      d.onclick = function (e) { if (e.target.tagName === "BUTTON") return; var row = $("fix_" + k); row.classList.toggle("hide"); };
+      d.onclick = function (e) { if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return; var row = $("fix_" + k); row.classList.toggle("hide"); };
       $("secs").appendChild(d);
       var row = $("fix_" + k);
       FIXES.forEach(function (f) {
-        var b = el("button", "sm", T(f[1], f[2])); b.style.cssText = "padding:8px 11px;font-size:12px;color:var(--amber);background:#1E2738";
+        var b = el("button", "sm", T(f[1], f[2])); b.style.cssText = "padding:8px 11px;font-size:12px;color:var(--amber);background:#2A2318";
         b.onclick = function (e) { e.stopPropagation(); fixSection(k, f); };
         row.appendChild(b);
       });
-      var drop = el("button", "sm", T("Leave this part out", "이 부분 빼기")); drop.style.cssText = "padding:8px 11px;font-size:12px;color:var(--red);background:#1E2738";
-      drop.onclick = function (e) { e.stopPropagation(); delete S.draft[k]; renderConfirm(); };
-      row.appendChild(drop);
+      var cust = el("button", "sm", "✏️ " + T("Tell it myself", "내가 말할게"));
+      cust.style.cssText = "padding:8px 11px;font-size:12px;font-weight:800;color:var(--violet);background:#2A2318";
+      cust.onclick = function (e) { e.stopPropagation(); openCustom(k); };
+      row.appendChild(cust);
     });
 
     var ok = el("button", "big green", "✓ " + T("Yes, that's my report!", "네, 이게 제 독후감이에요!")); ok.style.marginBottom = "9px";
@@ -462,13 +545,35 @@
     Array.prototype.forEach.call(document.querySelectorAll(".stb"), function (b) { b.onclick = function () { S.draft.stars = b.getAttribute("data-n"); renderConfirm(); }; });
   }
 
-  async function fixSection(k, f) {
+  // typing is the fallback here, never the main path - the chips do the work
+  function openCustom(k) {
+    var host = $("alt_" + k); if (!host) return;
+    if (host.firstChild) { host.innerHTML = ""; return; }
+    var wrap = el("div"); wrap.style.cssText = "display:flex;gap:6px;margin-top:9px";
+    var i = el("input"); i.placeholder = T("Tell the AI what to change", "어떻게 바꿀지 말해요"); i.style.flex = "1";
+    var g = el("button", "sm", T("Go", "고치기"));
+    g.style.cssText = "padding:8px 15px;font-size:12px;font-weight:800;color:var(--bg);background:var(--violet)";
+    function run() { var t = i.value.trim(); if (!t) return; host.innerHTML = ""; fixSection(k, ["custom", "Custom", "내 말", ""], t); }
+    g.onclick = function (e) { e.stopPropagation(); run(); };
+    i.onclick = function (e) { e.stopPropagation(); };
+    i.onkeydown = function (e) { e.stopPropagation(); if (e.key === "Enter") run(); };
+    wrap.appendChild(i); wrap.appendChild(g); host.appendChild(wrap); i.focus();
+  }
+
+  async function fixSection(k, f, custom) {
+    var before = S.draft[k];
     busy(T("Rewriting...", "다시 쓰는 중..."));
     try {
-      var raw = await ai('Henry (3rd grader) is editing his book report about "' + S.title + '". This part:\n"' + S.draft[k] + '"\n\nHis instruction: ' + f[3] + '\n\nWhat he actually said about the book: ' + S.fans.map(function (a) { return a.answer; }).join(" / ") + '\nRewrite just that part following his instruction. Keep his voice. ' + (L() === "ko" ? "In Korean 해요체." : "Simple English.") + ' Do not add facts he never mentioned.\n<new>\n(the rewritten part)\n</new>',
-        [{ role: "user", content: "Rewrite" }], 400);
+      var raw = await ai(RN() + ' (' + RL() + ') is editing their book report about "' + S.title + '". This part:\n"' + before + '"\n\nTheir instruction: ' + (custom ? 'do exactly this, in their own words: "' + custom + '"' : f[3]) + '\n\nWhat they actually said about the book: ' + S.fans.map(function (a) { return a.answer; }).join(" / ") + '\nRewrite just that part following their instruction. Keep their voice. ' + (L() === "ko" ? "In Korean 해요체." : "Simple English.") + ' Do not add facts they never mentioned.\n<new>\n(the rewritten part)\n</new>',
+        [{ role: "user", content: "Rewrite" }], 600);
       var nt = tag(raw, "new");
-      if (nt) { S.draft[k] = nt; renderConfirm(); }
+      if (nt) {
+        // the whole point of the app: a person overrode the machine, so keep the receipt
+        S.edits.push({ at: new Date().toISOString(), section: k, fix: f[0], label: f[1],
+                       custom: custom || "", lang: L(), before: before, after: nt,
+                       beforeLen: (before || "").length, afterLen: nt.length });
+        S.draft[k] = nt; renderConfirm();
+      }
       else err(T("Couldn't rewrite that. Try another button.", "다시 못 썼어요. 다른 버튼을 눌러봐요."));
     } catch (x) { err(T("Couldn't rewrite that.", "다시 못 썼어요.")); }
     busy("");
@@ -478,7 +583,7 @@
     busy(T("Saving...", "저장하는 중..."));
     try {
       var wins = S.ans.filter(function (a) { return !a.aiSame; }).length;
-      var entry = { id: Date.now(), profile: P(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, henryWins: wins, aiWins: S.ans.length - wins };
+      var entry = { id: Date.now(), profile: P(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, edits: S.edits || [], henryWins: wins, aiWins: S.ans.length - wins };
       await api("/books", { method: "POST", body: JSON.stringify(entry) });
       S.report = entry; renderReport(); show("report");
       loadBooks();
@@ -486,11 +591,15 @@
     busy("");
   }
 
+  function bookReader(b) {
+    var m = PROFILES.filter(function (x) { return x.id === (b.profile || "henry"); })[0];
+    return m ? m.name : "Reader";
+  }
   function reportText(b) {
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
       r.summary ? "What it's about\n" + r.summary : "", r.favorite ? "\nMy favorite part\n" + r.favorite : "", r.feeling ? "\nHow it made me feel\n" + r.feeling : "",
-      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz: Henry " + b.henryWins + " — AI " + b.aiWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
+      r.learned ? "\nWhat I take from it\n" + r.learned : "", r.recommend ? "\nWould I tell a friend?\n" + r.recommend : "", "", "Quiz: " + bookReader(b) + " " + b.henryWins + " — AI " + b.aiWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
   }
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
@@ -508,24 +617,46 @@
       '<p class="note">Every green ✕ is a question where the AI guessed differently than you. The AI never read this book — it only knows what people wrote about books like it. That\'s why you check things yourself.</p>';
     R.appendChild(sc);
 
+    if ((b.edits || []).length) R.appendChild(editLog(b));
+
     var btns = el("div"); btns.style.cssText = "display:flex;gap:9px;margin-bottom:10px";
-    var cp = el("button", "big green", "Send to Dad"); cp.style.fontSize = "13px";
-    cp.onclick = async function () { try { await navigator.clipboard.writeText(reportText(b)); busy("Copied! Paste it anywhere."); setTimeout(function () { busy(""); }, 1600); } catch (x) { err("Couldn't copy on this device."); } };
-    var pr = el("button", "big plain", "Print it"); pr.style.fontSize = "13px"; pr.onclick = function () { printReport(b); };
-    btns.appendChild(cp); btns.appendChild(pr); R.appendChild(btns);
+    var pr = el("button", "big green", "🖨 " + T("Print it", "인쇄하기")); pr.style.cssText = "font-size:13px;flex:1;min-width:0";
+    pr.onclick = function () { printReport(b); };
+    var cp = el("button", "big plain", "⧉ " + T("Copy", "복사")); cp.style.cssText = "font-size:13px;flex:1;min-width:0";
+    cp.onclick = async function () { try { await navigator.clipboard.writeText(reportText(b)); busy(T("Copied!", "복사됐어요!")); setTimeout(function () { busy(""); }, 1600); } catch (x) { err("Couldn't copy on this device."); } };
+    btns.appendChild(pr); btns.appendChild(cp); R.appendChild(btns);
     var again = el("button", "big dark", "↻ Do another book"); again.onclick = function () { resetRun(); show("library"); }; R.appendChild(again);
   }
+  function editLog(b) {
+    var box = el("div", "box"), open = false;
+    var head = el("button", "sm", "✎ " + T("What I changed", "내가 고친 것") + " · " + b.edits.length);
+    head.style.cssText = "width:100%;text-align:left;font-size:12px;font-weight:800;color:var(--violet);background:transparent;padding:0";
+    var body = el("div"); body.className = "hide"; body.style.marginTop = "10px";
+    b.edits.forEach(function (e, i) {
+      var d = el("div");
+      d.style.cssText = "padding:9px 0;border-top:" + (i ? "1px solid var(--line)" : "none");
+      d.innerHTML = '<div style="font-size:11px;color:var(--violet);font-weight:800">' + esc(e.custom ? '“' + e.custom + '”' : e.label) +
+        ' <span style="color:var(--sub);font-weight:400">· ' + esc(e.section) + '</span></div>' +
+        '<div style="font-size:11px;color:var(--sub);line-height:1.5;margin-top:4px;text-decoration:line-through">' + esc(e.before) + '</div>' +
+        '<div style="font-size:12px;line-height:1.5;margin-top:3px">' + esc(e.after) + '</div>';
+      body.appendChild(d);
+    });
+    head.onclick = function () { open = !open; body.classList.toggle("hide", !open); };
+    box.appendChild(head); box.appendChild(body);
+    return box;
+  }
+
   function printReport(b) {
     var w = window.open("", "_blank"); if (!w) { err("Your browser blocked the print window."); return; }
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     var sec = function (l, t) { return t ? "<h2>" + l + "</h2><p>" + esc(t) + "</p>" : ""; };
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#b8860b;margin:22px 0 6px}p{margin:0;font-size:15px}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
       sec("What it's about", r.summary) + sec("My favorite part", r.favorite) + sec("How it made me feel", r.feeling) + sec("What I take from it", r.learned) + sec("Would I tell a friend?", r.recommend) +
-      '<div class="foot">Quiz: Henry ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
+      '<div class="foot">Quiz: ' + esc(bookReader(b)) + ' ' + b.henryWins + ' &mdash; AI ' + b.aiWins + ' &middot; written in Book Lab</div></body></html>');
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 
-  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; err(""); renderLibrary(); }
+  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; S.edits = []; err(""); renderLibrary(); }
 
   // ---------- boot
   $("homeBtn").onclick = function () { resetRun(); show("library"); };

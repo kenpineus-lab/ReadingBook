@@ -1,0 +1,15 @@
+{
+  "name": "Book Lab",
+  "short_name": "Book Lab",
+  "description": "Read the book, then see how much the AI really knows about it.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#15110D",
+  "theme_color": "#15110D",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

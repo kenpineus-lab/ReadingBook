@@ -29,7 +29,7 @@ GH_REPO = os.environ.get("GITHUB_REPO", "")
 DB_PATH = os.environ.get("DB_PATH", "/data/booklab.db")
 
 
-PROFILES = ("henry", "test")          # "test" is Dad's sandbox - it never mixes into Henry's stats
+PROFILES = ("henry", "jeremy", "rebecca", "han")   # one shelf per person; stats never mix
 DEFAULT_PROFILE = "henry"
 
 SCHEMA = """CREATE TABLE IF NOT EXISTS books (
@@ -51,7 +51,11 @@ def _ensure_schema(con):
         con.execute(SCHEMA)
         con.commit()
         return
-    if "profile" in cols:              # already migrated
+    if "profile" in cols:
+        # v2 -> v3: the sandbox profile "test" became Han's own shelf
+        if con.execute("SELECT COUNT(*) FROM books WHERE profile='test'").fetchone()[0]:
+            con.execute("UPDATE books SET profile='han' WHERE profile='test'")
+            con.commit()
         return
     # v1 -> v2: books predate profiles, so they are all Henry's. Re-key on (profile, id).
     con.executescript(
@@ -196,6 +200,7 @@ class Book(BaseModel):
     answers: list = []
     follow: list = []
     report: dict | None = None
+    edits: list = []          # every AI rewrite the reader asked for, with before/after
     henryWins: int = 0
     aiWins: int = 0
 

@@ -1,6 +1,6 @@
 # Book Lab — CLAUDE.md
 
-A reading-log app for Henry (3rd grade, bilingual EN/KO, uses a tablet). He photographs a book cover, answers a tap-only quiz, tells the AI how he felt, plans and edits his own book report, and keeps stats. The AI is deliberately shown to be *fallible* — it guesses answers and Henry, who actually read the book, catches its mistakes.
+A reading-log app for the family — Henry (3rd grade), Jeremy, Rebecca, and Han (Dad). Bilingual EN/KO, used on a tablet. He photographs a book cover, answers a tap-only quiz, tells the AI how he felt, plans and edits his own book report, and keeps stats. The AI is deliberately shown to be *fallible* — it guesses answers and Henry, who actually read the book, catches its mistakes.
 
 Owner: HAN (kenpineus-lab). Repo: https://github.com/kenpineus-lab/ReadingBook
 
@@ -15,10 +15,23 @@ Owner: HAN (kenpineus-lab). Repo: https://github.com/kenpineus-lab/ReadingBook
 
 ```
 index.html            static frontend → GitHub Pages (no secrets, no build step)
+assets/               paper.svg, shelf.svg, mark.svg, icon-*.png — hand-made, no CDN
+manifest.webmanifest  home-screen identity (standalone, icons, theme colour)
 server/main.py        FastAPI → Railway (holds the API key, stores data, backs up to GitHub)
 server/requirements.txt, Procfile, railway.json
 README.md             deploy guide (Korean)
 ```
+
+## Profiles
+
+Four shelves: `henry`, `jeremy`, `rebecca`, `han`. `bl:profile` in `localStorage` picks
+one per device; every `/books` call is scoped by it, so books and stats never mix.
+`PROFILES` in `index.html` is the single source of truth — id, display name, icon, and
+`level` (the reading level the AI prompts are written for). The server's `PROFILES`
+tuple must list the same ids. Han's shelf is Dad's, for testing.
+
+Language follows the **book**, not the profile: the cover-photo call returns
+`language: en|ko` and that drives every prompt via `L()`. Don't tie it to the profile.
 
 ## Frontend (`index.html`)
 
@@ -34,13 +47,23 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   3. `makeFollowups` → three `<fq>` feelings questions. `reroll()` regenerates choices.
   4. `renderPlan` → Henry picks audience (teacher/friend/me) and taps sections in order. "Just write it" skips.
   5. `makeReport` → AI writes only the chosen sections in the chosen order for that audience → `renderConfirm`.
-  6. `renderConfirm` → tap a section to reveal `FIXES` buttons → `fixSection(k, fix)` rewrites that section. Stars adjustable. `saveReport` POSTs to `/books` only after "Yes, that's my report!".
-- **Stats:** computed client-side in `renderLibrary` from `/books`. Genre labels/icons in `GN`.
+  6. `renderConfirm` → tap a section to reveal `FIXES` chips → `fixSection(k, fix, custom)` rewrites
+     that section. `openCustom(k)` is the typed fallback — the reader dictates the change in
+     their own words. Stars adjustable. `saveReport` POSTs to `/books` only after
+     "Yes, that's my report!".
+- **Edit log:** every accepted rewrite is pushed to `S.edits` with `{section, fix, custom, before,
+  after, lang, at}` and saved on the book as `edits`. This is the evidence that a person
+  directed the machine — it is the point of the app, not telemetry. Keep it, and keep
+  `before`/`after` whole. `Book.edits` on the server must exist or Pydantic silently drops it.
+- **Stats:** computed client-side in `renderLibrary` from `/books` (already profile-scoped). Genre labels/icons in `GN`.
+- **Finished report** offers Print and Copy only. There is no mail sending: the server has no
+  mail provider, and a button that says "Send" must actually send.
 
 ## Server (`server/main.py`)
 
 - `POST /ai` — proxy. Model is `claude-sonnet-4-6`. Never expose the key.
-- `GET/POST /books`, `DELETE /books/{id}` — SQLite at `DB_PATH` (default `/data/booklab.db`; Railway volume must be mounted at `/data`).
+- `GET/POST /books`, `DELETE /books/{id}` — SQLite at `DB_PATH` (default `/data/booklab.db`; Railway volume must be mounted at `/data`). Rows are keyed on `(profile, id)`; reads and deletes take `?profile=`, writes take it in the body. An unknown profile is a 400.
+- `_ensure_schema` migrates in place on every connect: v1 (no profile column) → all rows become `henry`; v2 → the old `test` profile becomes `han`. Both are idempotent.
 - `POST /backup` + a daily loop → commits `henry-books.json` (covers stripped) to `GITHUB_REPO` using `GITHUB_TOKEN`.
 - Every endpoint except `/` requires header `x-family-code` == `FAMILY_CODE`.
 - CORS from `ALLOWED_ORIGIN` (comma-separated).
@@ -52,6 +75,8 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 - Edit `index.html` directly. Validate with: extract the `<script>` body and run `npx esbuild --target=es2017` on it. That catches syntax errors; there is no test suite.
 - Validate the server with `python -c "import ast; ast.parse(open('server/main.py').read())"` and, for behavior, the `fastapi.testclient` snippet in the README history: set `DB_PATH=/tmp/t.db FAMILY_CODE=1234`, then POST/GET/DELETE `/books` with the header.
 - Both languages: any new user-facing string goes through `T(en, ko)`. Any new AI prompt must branch on `L()` so Korean books get Korean questions (해요체).
+- Artwork lives in `assets/` as real files, not data URIs — they are same-origin on Pages and stay editable. The palette is warm library (leather, paper cream, gilt); no flat yellow.
+- `.hide` must stay `display:none!important` — `.cover{display:flex}` is defined after it and used to win.
 - Do not add a build step, a framework, or `localStorage` for book data. The whole point is that the page is a dumb client and the server + GitHub backup are the source of truth.
 - Don't gate features behind book counts. HAN explained everything to Henry up front; all tools are available from the first book.
 
@@ -64,7 +89,8 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 
 ## Backlog (not started)
 
-- Profiles per child (Henry + older brother) with grade level → question difficulty.
+- Per-profile reading level: `PROFILES[].level` exists but Jeremy and Rebecca are both
+  "a young reader". Set their real grades to tune question difficulty.
 - "Currently reading" state with chapter-by-chapter check-ins.
 - Open Library title search as a fallback when cover recognition fails.
 - Parent dashboard (read-only view of all reports and stats).

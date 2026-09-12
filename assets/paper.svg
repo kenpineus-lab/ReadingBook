@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <!-- Paper grain. Tiled behind everything at very low opacity so the dark
+       ground reads as pressed paper rather than flat screen black. -->
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="7" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 0.96  0 0 0 0 0.88  0 0 0 1 0"/>
+  </filter>
+  <rect width="220" height="220" filter="url(#grain)"/>
+</svg>
