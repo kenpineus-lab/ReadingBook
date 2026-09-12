@@ -66,11 +66,12 @@
   </div>
   <p class="tag">You read the book. Let's see how much the AI really knows about it.</p>
 
+  <div id="who" class="box hide" style="padding:10px 12px"></div>
+
   <div id="setup" class="box hide">
     <div class="lbl">ONE-TIME SETUP (for Dad)</div>
-    <p class="note" style="margin:0 0 10px">Paste the server address and the family code. They're kept on this device.</p>
-    <input id="srv" placeholder="https://your-app.up.railway.app" style="margin-bottom:8px" />
-    <input id="code" placeholder="family code" />
+    <p class="note" style="margin:0 0 10px">Enter the family code. It's kept on this device.</p>
+    <input id="code" placeholder="family code" autocomplete="off" autocapitalize="none" spellcheck="false" />
     <button id="saveSetup" class="big amber" style="margin-top:12px">Save</button>
   </div>
 
@@ -91,7 +92,15 @@
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
 
   // ---------- config (server + family code live on this device only)
-  var cfg = { srv: localStorage.getItem("bl:srv") || "", code: localStorage.getItem("bl:code") || "" };
+  var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
+  var PROFILES = [{ id: "henry", name: "Henry", icon: "📚" }, { id: "test", name: "Test", icon: "🧪" }];
+  var cfg = {
+    srv: localStorage.getItem("bl:srv") || SRV,
+    code: localStorage.getItem("bl:code") || "",
+    profile: localStorage.getItem("bl:profile") || "henry"
+  };
+  function P() { return cfg.profile === "test" ? "test" : "henry"; }
+  function qp(path) { return path + (path.indexOf("?") < 0 ? "?" : "&") + "profile=" + P(); }
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
@@ -115,7 +124,38 @@
   function blocks(raw, n) { var out = [], re = new RegExp("<" + n + ">([\\s\\S]*?)<\\/" + n + ">", "gi"), m; while ((m = re.exec(raw)) !== null) { var p = kv(m[1]); if (p) out.push(p); } return out; }
 
   // ---------- ui helpers
-  function show(id) { ["library", "quiz", "follow", "plan", "report"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); }); $("homeBtn").classList.toggle("hide", id === "library"); }
+  function show(id) {
+    ["library", "quiz", "follow", "plan", "report"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); });
+    $("homeBtn").classList.toggle("hide", id === "library");
+    // swap profiles only from the library - never in the middle of a book
+    $("who").classList.toggle("hide", id !== "library" || needSetup());
+  }
+
+  function renderWho() {
+    var w = $("who"); w.innerHTML = "";
+    var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:8px";
+    var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);flex:1";
+    row.appendChild(lab);
+    PROFILES.forEach(function (pr) {
+      var on = pr.id === P();
+      var b = el("button", "sm", pr.icon + " " + pr.name);
+      b.style.cssText = "padding:6px 12px;font-size:12px;font-weight:800;" +
+        (on ? "color:var(--bg);background:" + (pr.id === "test" ? "var(--violet)" : "var(--amber)") + ";border-radius:8px"
+            : "color:var(--sub)");
+      b.onclick = function () {
+        if (pr.id === P()) return;
+        cfg.profile = pr.id; localStorage.setItem("bl:profile", pr.id);
+        S.books = []; resetRun(); renderWho(); show("library"); loadBooks();
+      };
+      row.appendChild(b);
+    });
+    w.appendChild(row);
+    if (P() === "test") {
+      var t = el("div", null, "Test profile \u2014 these books stay out of Henry's stats.");
+      t.style.cssText = "font-size:11px;color:var(--violet);margin-top:8px";
+      w.appendChild(t);
+    }
+  }
   function busy(t) { $("busy").classList.toggle("hide", !t); $("busyText").textContent = t || ""; }
   function err(t) { $("err").classList.toggle("hide", !t); $("errText").textContent = t || ""; }
   function stars(n) { n = Math.max(1, Math.min(5, parseInt(n) || 3)); return "★".repeat(n); }
@@ -123,7 +163,7 @@
   // ---------- library
   async function loadBooks() {
     if (needSetup()) return;
-    try { S.books = await api("/books"); } catch (e) { err(e.message); }
+    try { S.books = await api(qp("/books")); } catch (e) { err(e.message); }
     renderLibrary();
   }
 
@@ -184,7 +224,7 @@
         r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
           '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w">You ' + (x.henryWins || 0) + ' — AI ' + (x.aiWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
-        var db = el("button", "sm", "✕"); db.style.color = "#3E4C63"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api("/books/" + x.id, { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
+        var db = el("button", "sm", "✕"); db.style.color = "#3E4C63"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api(qp("/books/" + x.id), { method: "DELETE" }); } catch (e) { err(e.message); } loadBooks(); };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
       L.appendChild(lst);
@@ -438,7 +478,7 @@
     busy(T("Saving...", "저장하는 중..."));
     try {
       var wins = S.ans.filter(function (a) { return !a.aiSame; }).length;
-      var entry = { id: Date.now(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, henryWins: wins, aiWins: S.ans.length - wins };
+      var entry = { id: Date.now(), profile: P(), title: S.title, author: S.author, cover: S.cover, date: new Date().toISOString().slice(0, 10), lang: L(), genre: S.genre || "other", kind: S.kind || "fiction", audience: S.audience || "me", order: S.order || [], answers: S.ans, follow: S.fans, report: S.draft, henryWins: wins, aiWins: S.ans.length - wins };
       await api("/books", { method: "POST", body: JSON.stringify(entry) });
       S.report = entry; renderReport(); show("report");
       loadBooks();
@@ -490,12 +530,15 @@
   // ---------- boot
   $("homeBtn").onclick = function () { resetRun(); show("library"); };
   $("saveSetup").onclick = function () {
-    cfg.srv = $("srv").value.trim(); cfg.code = $("code").value.trim();
+    var c = $("code").value.trim();
+    if (!c) { $("code").focus(); return; }
+    cfg.code = c;
     localStorage.setItem("bl:srv", cfg.srv); localStorage.setItem("bl:code", cfg.code);
-    $("setup").classList.add("hide"); loadBooks();
+    $("setup").classList.add("hide"); renderWho(); show("library"); loadBooks();
   };
-  if (needSetup()) { $("setup").classList.remove("hide"); $("srv").value = cfg.srv; }
-  renderLibrary(); loadBooks(); show("library");
+  $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
+  if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
+  renderWho(); renderLibrary(); loadBooks(); show("library");
 })();
 </script>
 </body>
