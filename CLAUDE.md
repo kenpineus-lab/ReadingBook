@@ -32,7 +32,9 @@ because a book always belongs to whoever read it. `isFamily()` guards the UI; de
 from that view target the owner's shelf, not `all`. `bl:profile` in `localStorage` picks
 one per device; every `/books` call is scoped by it, so books and stats never mix.
 `PROFILES` in `index.html` is the single source of truth — id, display name, icon, and
-`level` (the reading level the AI prompts are written for). The server's `PROFILES`
+`level` (the reading level the AI prompts are written for: Henry 3rd grade, Jeremy 8th
+grade, Rebecca and Han adults). `level` is not decoration — it sets how hard the quiz
+questions come back, so keep it accurate as the kids grow. The server's `PROFILES`
 tuple must list the same ids. Han's shelf is Dad's, for testing.
 
 Language follows the **book**, not the profile: the cover-photo call returns
@@ -126,8 +128,6 @@ questions are on the table the day launching is actually considered.
 
 - Let each person pick their own profile icon (currently hardcoded in `PROFILES`).
 
-- Per-profile reading level: `PROFILES[].level` exists but Jeremy and Rebecca are both
-  "a young reader". Set their real grades to tune question difficulty.
 - "Currently reading" state with chapter-by-chapter check-ins.
 - Open Library title search as a fallback when cover recognition fails.
 - Parent dashboard (read-only view of all reports and stats).

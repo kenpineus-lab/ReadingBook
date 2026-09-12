@@ -194,8 +194,8 @@
   var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
   var PROFILES = [
     { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader" },
-    { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "a young reader" },
-    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "a young reader" },
+    { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "an 8th grader" },
+    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "an adult reader" },
     { id: "han",     name: "Han",     icon: "☕", level: "an adult reader" }
   ];
   // Not a person - the whole household's shelf. Read-only: you can look, but a
@@ -353,7 +353,10 @@
         '<div class="row">' +
           '<div class="tap' + (S.stat === "streak" ? " on" : "") + '" data-stat="streak"><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
           '<div class="tap' + (S.stat === "diff" ? " on" : "") + '" data-stat="diff"><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
-          (ko ? '<div><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' : '') +
+        '</div>' +
+        '<div class="row">' +
+          '<div class="tap' + (S.stat === "en" ? " on" : "") + '" data-stat="en"><div class="n" style="color:var(--text)">' + (S.books.length - ko) + '</div><div class="l">ENGLISH</div></div>' +
+          '<div class="tap' + (S.stat === "ko" ? " on" : "") + '" data-stat="ko"><div class="n" style="color:var(--text)">' + ko + '</div><div class="l">한글책</div></div>' +
         '</div>' +
         (genres.length ? '<div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
           genres.slice(0, 5).map(function (g) { var m = GN[g] || GN.other; return '<div class="stars" style="margin-bottom:6px"><span style="font-size:13px;width:22px">' + m[2] + '</span><span style="font-size:12px;width:88px;color:var(--text)">' + m[0] + '</span><div class="t" style="height:10px"><div class="f" style="width:' + (G[g] / maxG * 100) + '%;background:var(--green)"></div></div><span class="c" style="font-size:12px;color:var(--text);width:20px">' + G[g] + '</span></div>'; }).join("") : "");
@@ -399,13 +402,17 @@
   function statDetail(kind) {
     var box = el("div", "box det"), body = el("div");
     var head = { books: "EVERY BOOK YOU'VE FINISHED", month: "FINISHED THIS MONTH",
-                 streak: "YOUR WEEKS, MOST RECENT FIRST", diff: "WHERE YOU AND THE AI READ IT DIFFERENTLY" }[kind];
+                 streak: "YOUR WEEKS, MOST RECENT FIRST", diff: "WHERE YOU AND THE AI READ IT DIFFERENTLY",
+                 en: "READ IN ENGLISH", ko: "한글로 읽은 책" }[kind];
     box.innerHTML = '<div class="lbl" style="color:var(--amber)">' + head + '</div>';
 
-    if (kind === "books" || kind === "month") {
+    if (kind === "books" || kind === "month" || kind === "en" || kind === "ko") {
       var ym = new Date().toISOString().slice(0, 7);
-      var list = kind === "month" ? S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; }) : S.books;
-      if (!list.length) body.innerHTML = '<p class="note" style="margin:0">Nothing here yet.</p>';
+      var list = kind === "month" ? S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; })
+               : kind === "ko"    ? S.books.filter(function (x) { return x.lang === "ko"; })
+               : kind === "en"    ? S.books.filter(function (x) { return x.lang !== "ko"; })
+               : S.books;
+      if (!list.length) body.innerHTML = '<p class="note" style="margin:0">' + (kind === "ko" ? "아직 한글책은 없어요." : "Nothing here yet.") + '</p>';
       else list.forEach(function (x) { body.appendChild(bookLine(x)); });
 
     } else if (kind === "streak") {
