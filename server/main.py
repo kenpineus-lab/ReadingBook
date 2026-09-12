@@ -45,8 +45,16 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS books (
 )"""
 
 
+ICON_MAX = 12          # a couple of emoji, including any variation selectors
+
+
+def _ensure_settings(con):
+    con.execute("CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)")
+
+
 def _ensure_schema(con):
     cols = [r["name"] for r in con.execute("PRAGMA table_info(books)")]
+    _ensure_settings(con)
     if not cols:                       # fresh database
         con.execute(SCHEMA)
         con.commit()
@@ -237,6 +245,37 @@ def delete_book(book_id: int, profile: str | None = None, x_family_code: str | N
 async def backup(x_family_code: str | None = Header(default=None)):
     check(x_family_code)
     return await backup_to_github()
+
+
+class IconReq(BaseModel):
+    profile: str
+    icon: str
+
+
+@app.get("/profiles")
+def get_profiles(x_family_code: str | None = Header(default=None)):
+    """Per-person display settings. Lives on the server so a chosen icon follows
+    the person to every device, not just the one they picked it on."""
+    check(x_family_code)
+    con = db()
+    out = {}
+    for r in con.execute("SELECT k, v FROM settings WHERE k LIKE 'icon:%'"):
+        out[r["k"][5:]] = r["v"]
+    return out
+
+
+@app.post("/profiles")
+def set_profile(req: IconReq, x_family_code: str | None = Header(default=None)):
+    check(x_family_code)
+    p = prof(req.profile)
+    icon = (req.icon or "").strip()
+    # a label, not a payload: no whitespace, no control characters, and short
+    if not icon or len(icon) > ICON_MAX or any(c.isspace() or ord(c) < 32 for c in icon):
+        raise HTTPException(400, "icon must be 1-%d characters, no whitespace" % ICON_MAX)
+    con = db()
+    con.execute("INSERT OR REPLACE INTO settings (k, v) VALUES (?,?)", ("icon:" + p, icon))
+    con.commit()
+    return {"ok": True, "profile": p, "icon": icon}
 
 
 @app.get("/")

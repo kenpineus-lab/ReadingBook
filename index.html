@@ -251,19 +251,41 @@
     { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader",
       levelEn: "a 3rd grader who reads English about two grades ahead, so pitch the questions and the writing at a 5th-grade level" },
     { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "an 8th grader" },
-    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "an adult reader" },
-    { id: "han",     name: "Han",     icon: "☕", level: "an adult reader" }
+    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "an adult reader", adult: true },
+    { id: "han",     name: "Han",     icon: "☕", level: "an adult reader", adult: true }
   ];
   // Not a person - the whole household's shelf. Read-only: you can look, but a
   // book is always saved to the person who read it.
   var FAMILY = { id: "all", name: "Family", icon: "👪" };
+  // Tap-only on purpose - opening the emoji keyboard would put a text field on
+  // the one screen that is meant to need none.
+  var ICONS = ["🐻","🚗","🌸","☕","🦊","🐼","🦕","🚀","⚽","🎸","🐙","🦉",
+               "🌙","⭐","🍀","🐳","🎨","🧁","🦄","🐢","🔭","🧩","🌵","🍕"];
   function isFamily() { return cfg.profile === "all"; }
-  function who(id) { return PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0]; }
+  function who(id) {
+    var pr = PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0];
+    var chosen = S.icons && S.icons[pr.id];
+    return chosen ? { id: pr.id, name: pr.name, icon: chosen, level: pr.level, levelEn: pr.levelEn, adult: pr.adult } : pr;
+  }
   var cfg = {
     srv: localStorage.getItem("bl:srv") || SRV,
     code: localStorage.getItem("bl:code") || "",
     profile: localStorage.getItem("bl:profile") || "henry"
   };
+  // the icon belongs to the person, not to the device, so it lives on the server
+  async function loadIcons() {
+    if (needSetup()) return;
+    try { S.icons = await api("/profiles"); } catch (e) { S.icons = {}; }
+    renderWho(); renderLibrary();
+  }
+  async function setIcon(ic) {
+    var id = P();
+    if (id === "all") return;
+    S.icons[id] = ic; S.picking = false; renderWho(); renderLibrary();
+    try { await api("/profiles", { method: "POST", body: JSON.stringify({ profile: id, icon: ic }) }); }
+    catch (e) { err(e.message); }
+  }
+
   // day or night - remembered per device, like the rest of the setup
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
@@ -279,6 +301,17 @@
   }
   function RP() { return who(P()); }   // never "all" - the family shelf can't start a run
   function RN() { return RP().name; }                        // whose report the AI is writing
+  // Level sets how hard; voice sets how it sounds. An adult writing about a book
+  // should not read like a third grader, however gentle the app is elsewhere.
+  function isAdult() { return !!RP().adult; }
+  function voice() {
+    return isAdult()
+      ? (L() === "ko" ? "Write in natural adult Korean, 평서체, 담백하고 군더더기 없이. No childish phrasing."
+                      : "Write the way a literate adult writes: clear, plain sentences, no childish phrasing and no exclamation marks.")
+      : (L() === "ko" ? "Write in simple Korean (해요체) a child reads easily."
+                      : "Simple words, the way a kid actually talks.");
+  }
+
   function RL() {                      // English can be stretched past grade level; Korean isn't
     var pr = RP();
     return (L() === "en" && pr.levelEn) ? pr.levelEn : pr.level;
@@ -287,7 +320,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false };
 
   // ---------- server
   async function api(path, opts) {
@@ -319,7 +352,7 @@
     var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap";
     var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);width:100%;margin-bottom:3px";
     row.appendChild(lab);
-    PROFILES.concat([FAMILY]).forEach(function (pr) {
+    PROFILES.map(function (x) { return who(x.id); }).concat([FAMILY]).forEach(function (pr) {
       var on = pr.id === P();
       var b = el("button", "sm", pr.icon + " " + pr.name);
       b.style.cssText = "padding:7px 11px;font-size:12px;font-weight:800;border-radius:9px;" +
@@ -332,7 +365,29 @@
       };
       row.appendChild(b);
     });
+    if (!isFamily()) {
+      var pen = el("button", "sm", "✎");
+      pen.title = "Change my icon";
+      pen.style.cssText = "padding:7px 10px;font-size:12px;color:var(--sub);background:transparent;border:1px solid var(--line)";
+      pen.onclick = function () { S.picking = !S.picking; renderWho(); };
+      row.appendChild(pen);
+    }
     w.appendChild(row);
+
+    if (S.picking && !isFamily()) {
+      var g = el("div");
+      g.style.cssText = "display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px";
+      ICONS.forEach(function (ic) {
+        var b = el("button", "sm", ic);
+        var mine = ic === who(P()).icon;
+        b.style.cssText = "padding:8px 0;font-size:19px;text-align:center;background:" +
+          (mine ? "var(--chip2)" : "transparent") + ";border:1px solid " + (mine ? "var(--amber)" : "var(--line)");
+        b.onclick = function () { setIcon(ic); };
+        g.appendChild(b);
+      });
+      w.appendChild(g);
+    }
+
     if (isFamily()) {
       var counts = {};
       S.books.forEach(function (x) { counts[x.profile || "henry"] = (counts[x.profile || "henry"] || 0) + 1; });
@@ -607,7 +662,7 @@
     busy(T("The AI wants to ask you a few things...", "AI가 몇 가지 더 물어보고 싶대요..."));
     try {
       var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → " + RN() + " picked: " + a.pickedText; }).join("\n");
-      var raw = await ai(RN() + ' is ' + RL() + '.\nThey just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + ' and answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + (L() === "ko" ? "Write in simple Korean (해요체) a Korean 3rd grader reads easily." : "Simple words a 3rd grader knows.") + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like a kid wrote them.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var raw = await ai(RN() + ' is ' + RL() + '.\nThey just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + ' and answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + voice() + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like something they would actually say.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Ask him" }], 1200);
       var fq = blocks(raw, "fq").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 3);
       if (!fq.length) { busy(""); return makeReport(); }
@@ -670,7 +725,7 @@
   async function reroll() {
     var q = S.fqs[S.fi]; busy(T("Thinking of other choices...", "다른 보기를 생각하는 중..."));
     try {
-      var raw = await ai(RN() + ' (' + RL() + ') was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' Sound like a kid.\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var raw = await ai(RN() + ' (' + RL() + ') was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' '  + voice() + '\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Other choices please" }], 600);
       var f = blocks(raw, "fq")[0]; if (f && f.a) { f.text = q.text; S.fqs[S.fi] = f; renderFollow(); }
     } catch (x) { }
@@ -689,7 +744,7 @@
       var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
       var DESC = { summary: "(2 sentences about what the book is about, based on his answers)", favorite: "(1-2 sentences about the part or character he liked, in his voice)", feeling: "(1-2 sentences about how the book made him feel, based on what he said)", learned: "(1 sentence about what he might take away from it)", recommend: "(1 short sentence — would he tell a friend to read it, and why)" };
       var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
-      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — simple, honest, the way they would say it.\n' + (L() === "ko" ? "Write in Korean, 해요체, the way a Korean 3rd grader writes." : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
+      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — honest, unforced, the way they would actually put it. ' + voice() + '\n' + (L() === "ko" ? voice() : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
         [{ role: "user", content: "Write the report" }], 900);
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
@@ -703,11 +758,11 @@
   var FIXES = [
     ["longer",  "Longer",        "더 길게",   "Make it longer. Add a sentence or two that build on what they already said — no new facts."],
     ["detail",  "More detail",   "자세히",    "Add concrete detail — what happened, where, who. Only things they actually mentioned."],
-    ["funnier", "Funnier",       "더 재밌게", "Make it funnier, the way a kid would joke about it."],
+    ["funnier", "Funnier",       "더 재밌게", "Make it funnier — the kind of joke this reader would actually make."],
     ["why",     "Say why",       "왜 그런지", "Add the reason — WHY. Use what they actually answered."],
     ["name",    "Use the name",  "이름 넣기", "Use the character's actual name instead of 'he' or 'the character'."],
     ["feeling", "More feeling",  "느낌 더",   "Say more about how it made them feel, in their own words."],
-    ["easier",  "Simpler words", "쉬운 말로", "Use simpler, shorter words. Nothing a kid would have to look up."],
+    ["easier",  "Simpler words", "쉬운 말로", "Use simpler, shorter words. Nothing the reader would have to look up."],
     ["nospoil", "Don't spoil",   "결말 빼기", "Don't give away the ending or the big surprise. Keep it a secret for the reader."],
   ];
 
@@ -770,7 +825,7 @@
     var before = S.draft[k];
     busy(T("Rewriting...", "다시 쓰는 중..."));
     try {
-      var raw = await ai(RN() + ' (' + RL() + ') is editing their book report about "' + S.title + '". This part:\n"' + before + '"\n\nTheir instruction: ' + (custom ? 'do exactly this, in their own words: "' + custom + '"' : f[3]) + '\n\nWhat they actually said about the book: ' + S.fans.map(function (a) { return a.answer; }).join(" / ") + '\nRewrite just that part following their instruction. Keep their voice. ' + (L() === "ko" ? "In Korean 해요체." : "Simple English.") + ' Do not add facts they never mentioned.\n<new>\n(the rewritten part)\n</new>',
+      var raw = await ai(RN() + ' (' + RL() + ') is editing their book report about "' + S.title + '". This part:\n"' + before + '"\n\nTheir instruction: ' + (custom ? 'do exactly this, in their own words: "' + custom + '"' : f[3]) + '\n\nWhat they actually said about the book: ' + S.fans.map(function (a) { return a.answer; }).join(" / ") + '\nRewrite just that part following their instruction. Keep their voice. ' + voice() + ' Do not add facts they never mentioned.\n<new>\n(the rewritten part)\n</new>',
         [{ role: "user", content: "Rewrite" }], 600);
       var nt = tag(raw, "new");
       if (nt) {
@@ -805,7 +860,7 @@
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Read by " + bookReader(b) + "   Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
       ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
-        .map(function (k) { return r[k]; }).filter(Boolean).join("\n\n"), "", "Quiz \u2014 same as the AI: " + b.aiWins + ", read it differently: " + b.henryWins, "", "— written in Book Lab"].filter(Boolean).join("\n");
+        .map(function (k) { return r[k]; }).filter(Boolean).join("\n\n"), "", "— written in Book Lab"].filter(Boolean).join("\n");
   }
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
@@ -886,7 +941,7 @@
     if (!c) { $("code").focus(); return; }
     cfg.code = c;
     localStorage.setItem("bl:srv", cfg.srv); localStorage.setItem("bl:code", cfg.code);
-    $("setup").classList.add("hide"); renderWho(); show("library"); loadBooks();
+    $("setup").classList.add("hide"); renderWho(); show("library"); loadBooks(); loadIcons();
   };
   $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
   if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
@@ -895,7 +950,7 @@
     var t = document.documentElement.getAttribute("data-theme") === "day" ? "night" : "day";
     localStorage.setItem("bl:theme", t); applyTheme(t);
   };
-  renderWho(); renderLibrary(); loadBooks(); show("library");
+  renderWho(); renderLibrary(); loadBooks(); loadIcons(); show("library");
 })();
 </script>
 </body>

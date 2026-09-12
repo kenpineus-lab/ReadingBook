@@ -38,7 +38,16 @@ questions come back and how the report is written, so keep it accurate as the ki
 An optional `levelEn` overrides it for English books only: Henry reads Korean at grade
 level but English two grades ahead, so `RL()` picks by `L()`, not by profile alone. Any
 phrase put in `level`/`levelEn` has to survive being dropped mid-sentence in five prompts —
-keep it a noun phrase. The server's `PROFILES`
+keep it a noun phrase. `adult: true` is a separate axis: `level` sets how *hard*, `voice()`
+sets how it *sounds*. Rebecca and Han get adult prose (평서체 in Korean); the kids get a
+child's register. Every prompt that used to hard-code "like a kid" now calls `voice()` —
+if you add a prompt, call it there too or an adult will get a third-grader's sentences.
+
+**Icons** are per person and live on the server (`GET/POST /profiles`, a `settings` table
+keyed `icon:<profile>`), so a choice made on the tablet shows up on the laptop. The picker
+is a fixed grid of 24 (`ICONS`) — tapping only, because opening the emoji keyboard would put
+a text field on the one screen designed to need none. `who(id)` layers the chosen icon over
+the default, so everything that renders a profile picks it up for free. The server's `PROFILES`
 tuple must list the same ids. Han's shelf is Dad's, for testing.
 
 Language follows the **book**, not the profile: the cover-photo call returns
@@ -77,13 +86,17 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   (`.essay`, drop cap, indented runs). The report prompt is told it will be printed with no
   headings, so each part must read as the next paragraph. Don't put the labels back.
 - **Report actions:** the coloured button is "Do another book", because that is what happens
-  next nine times out of ten. Print and Copy sit below it, plain.
+  next nine times out of ten. Print and Copy sit below it, plain. The copied text is the report
+  and nothing else — no quiz tally — because it gets pasted where the writing is wanted.
 - **Finished report** offers Print and Copy only. There is no mail sending: the server has no
   mail provider, and a button that says "Send" must actually send.
 
 ## Server (`server/main.py`)
 
 - `POST /ai` — proxy. Model is `claude-sonnet-4-6`. Never expose the key.
+- `GET/POST /profiles` — per-person display settings (currently just the icon) in a `settings`
+  key/value table. The icon is validated as a short label: 1-12 chars, no whitespace, no control
+  characters. It is never interpolated anywhere as HTML without `esc()`.
 - `GET/POST /books`, `DELETE /books/{id}` — SQLite at `DB_PATH` (default `/data/booklab.db`; Railway volume must be mounted at `/data`). Rows are keyed on `(profile, id)`; reads and deletes take `?profile=`, writes take it in the body. An unknown profile is a 400.
 - `_ensure_schema` migrates in place on every connect: v1 (no profile column) → all rows become `henry`; v2 → the old `test` profile becomes `han`. Both are idempotent.
 - `POST /backup` + a daily loop → commits `henry-books.json` (covers stripped) to `GITHUB_REPO` using `GITHUB_TOKEN`.
