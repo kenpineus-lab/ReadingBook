@@ -69,7 +69,9 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   5. `makeReport` → AI writes only the chosen sections in the chosen order for that audience → `renderConfirm`.
   6. `renderConfirm` → tap a section to reveal `FIXES` chips → `fixSection(k, fix, custom)` rewrites
      that section — the section labels exist **only here**, as scaffolding for choosing what
-     to fix. `openCustom(k)` is the typed fallback — the reader dictates the change in
+     to fix. Every part carries a visible `✎ fix this` pill and the first part opens with its
+     chips already showing: an affordance nobody can see is an affordance nobody uses, and a
+     demonstration beats an instruction. `openCustom(k)` is the typed fallback — the reader dictates the change in
      their own words. Stars adjustable. `saveReport` POSTs to `/books` only after
      "Yes, that's my report!".
 - **Revision:** `editReport(b)` reopens a saved book — `✎` on any library row. It restores the
@@ -120,6 +122,15 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
 
 - Edit `index.html` directly. Validate with: extract the `<script>` body and run `npx esbuild --target=es2017` on it. That catches syntax errors; there is no test suite.
 - Validate the server with `python -c "import ast; ast.parse(open('server/main.py').read())"` and, for behavior, the `fastapi.testclient` snippet in the README history: set `DB_PATH=/tmp/t.db FAMILY_CODE=1234`, then POST/GET/DELETE `/books` with the header.
+- **Never hardcode a person.** No prompt and no UI string may contain "Henry"/"헨리" or a
+  gendered pronoun — there are four readers and one of them is an adult woman. Prompts say
+  `RN()` / `RL()` / `voice()` and use *they*; follow-up questions are written in the second
+  person ("you") and the report in the first ("I"). Grep for `he|his|him|헨리` before
+  committing a prompt change.
+- **One tap, one AI call.** `busy()` raises `#veil`, a full-screen pointer trap, and sets
+  `S.working`; every async entry point returns early while it is set. Without this a second
+  tap started a second call whose answer replaced the first — the question on screen changed
+  by itself a moment after it appeared. Any new AI-calling handler needs the same guard.
 - Both languages: any new user-facing string goes through `T(en, ko)`. Any new AI prompt must branch on `L()` so Korean books get Korean questions (해요체).
 - **Three sizes, one column.** Phone is the default; `@media (min-width:680px)` widens the
   measure, grows the type and turns the stat tiles into one four-across band via

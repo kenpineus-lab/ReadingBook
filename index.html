@@ -31,13 +31,17 @@
     --grain:overlay; --grainO:.05; --shelfO:.24;
     --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
   }
-  html[data-theme="day"]{     /* daylight: the same library with the curtains open */
-    --bg:#EFE6D4; --bg2:#F7F0E2; --panel:#FFFCF4; --panel2:#FFFFFF; --line:#DCCCB0;
-    --text:#2C241A; --sub:#8A7A62; --ink:#3B3127;
-    --well:#F4ECDC; --chip:#EDE3CE; --chip2:#E7DBC2; --dim:#EDE4D3; --ph:#A4957E;
-    --amber:#C8823A; --green:#5E8A6A; --gold:#A8801F; --red:#B04E38; --violet:#7A57A3;
-    --onAccent:#26190A;
-    --grain:multiply; --grainO:.07; --shelfO:.20;
+  html[data-theme="day"]{     /* daylight: sunlit paper, and a warmer welcome */
+    --bg:#FFF6EA; --bg2:#FFFCF7; --panel:#FFFFFF; --panel2:#FFFFFF; --line:#F2E3D2;
+    --text:#3A2F26; --sub:#8A7361; --ink:#473A30;
+    --well:#FFF5E9; --chip:#FFEFDF; --chip2:#FFE6CE; --dim:#FFF2E6; --ph:#BFAC9A;
+    --amber:#FF9F5A;   /* peach - the primary action */
+    --green:#4FC1A0;   /* mint - yes, that's mine */
+    --gold:#F0A93B;    /* sunny - stars */
+    --red:#FF7B6B;
+    --violet:#9B7BE8;  /* lilac - where the two readings differ */
+    --onAccent:#3E2411;
+    --grain:multiply; --grainO:.05; --shelfO:.30;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -64,7 +68,8 @@
 
   .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
   .mark{width:32px;height:27px;flex-shrink:0}
-  html[data-theme="day"] .mark{filter:saturate(1.15) brightness(.62)}
+  html[data-theme="day"] .mark{filter:saturate(1.3) brightness(.78) hue-rotate(-6deg)}
+  html[data-theme="day"] .shelf{filter:saturate(1.45) brightness(1.5)}
   html[data-theme="day"] h1{text-shadow:none}
   h1{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;
     color:var(--gold);margin:0;text-shadow:0 1px 0 rgba(0,0,0,.5)}
@@ -72,21 +77,23 @@
     margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--line);line-height:1.5}
 
   .box{background:linear-gradient(180deg,var(--panel2) 0%, var(--panel) 100%);
-    border:1px solid var(--line);border-radius:14px;padding:17px;margin-bottom:14px;
+    border:1px solid var(--line);border-radius:20px;padding:17px;margin-bottom:14px;
     box-shadow:0 1px 0 rgba(255,240,214,.045) inset, 0 10px 26px -18px rgba(0,0,0,.9)}
 
-  .big{width:100%;padding:15px;border-radius:11px;border:none;font-size:15px;font-weight:700;
-    cursor:pointer;font-family:inherit;letter-spacing:.01em}
+  .big{width:100%;padding:15px;border-radius:15px;border:none;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;letter-spacing:.01em;transition:transform .08s}
+  .big:active{transform:scale(.985)}
+  .sm:active,.opt:active{transform:scale(.99)}
   .amber{background:linear-gradient(180deg,#E0A257,var(--amber));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(214,148,71,.8)}
   .green{background:linear-gradient(180deg,#92B79A,var(--green));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
   .dark{background:var(--dim);color:var(--amber);border:1px solid var(--line)}
   .plain{background:var(--dim);color:var(--text);border:1px solid var(--line)}
-  .sm{background:var(--chip);color:var(--sub);border:none;border-radius:9px;padding:8px 12px;
-    font-size:12px;cursor:pointer;font-family:inherit}
+  .sm{background:var(--chip);color:var(--sub);border:none;border-radius:999px;padding:8px 13px;
+    font-size:12px;cursor:pointer;font-family:inherit;transition:transform .08s}
 
-  .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:10px;
+  .opt{width:100%;text-align:left;padding:13px 14px;margin-bottom:9px;border-radius:14px;transition:transform .08s;
     background:var(--well);border:1px solid var(--line);color:var(--text);font-size:14px;
     cursor:pointer;font-family:inherit;line-height:1.45}
   .opt b{color:var(--sub);margin-right:9px;font-family:var(--serif)}
@@ -106,12 +113,12 @@
   @keyframes s{to{transform:rotate(360deg)}}
 
   .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
-  .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:16px;padding:12px}
   .row>div.tap{cursor:pointer;transition:border-color .12s,background .12s}
   .row>div.tap:hover{border-color:var(--sub)}
   .row>div.on{border-color:var(--amber);background:var(--chip)}
   .langrow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
-  .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:8px;
+  .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:999px;
     padding:6px 11px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:inherit}
   .lang b{color:var(--text);font-weight:800;margin-left:5px;font-size:12px}
   .lang.on{border-color:var(--amber);color:var(--amber)}.lang.on b{color:var(--amber)}
@@ -128,11 +135,13 @@
   .stars .f{height:100%;background:linear-gradient(90deg,var(--gold),var(--amber))}
   .stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
 
-  .book{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
+  .book{display:flex;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
   .book img,.book .ph{width:38px;height:52px;border-radius:3px;object-fit:cover;flex-shrink:0;
     background:var(--well);box-shadow:2px 2px 8px -4px rgba(0,0,0,.35)}
   .book .t{font-family:var(--serif);font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .book .m{font-size:11px;color:var(--sub);margin-top:1px}
+  /* three round buttons on a phone row were eating the title */
+  .book .sm{padding:7px 9px;font-size:11px;flex-shrink:0}
   .book .w{font-size:11px;color:var(--violet);margin-top:2px}
 
   .verdict{padding:13px;border-radius:10px;margin-top:12px}
@@ -153,6 +162,11 @@
   .essay p:first-child::first-letter{float:left;font-family:var(--serif);font-weight:700;
     font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:var(--gold)}
   .head{border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:15px}
+  /* the handle on each part of a draft - visible before you touch anything */
+  .pen{flex-shrink:0;font-size:10.5px;font-weight:800;letter-spacing:.03em;
+    color:var(--violet);background:var(--chip2);border-radius:999px;padding:4px 9px;white-space:nowrap}
+  .pen.on{background:var(--violet);color:var(--panel)}
+  .sec.fixable{cursor:pointer;border:1px dashed var(--line)}
 
   .ans{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
   .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}.ans .aa{font-size:12px;margin-top:2px}
@@ -163,6 +177,10 @@
   input:focus{border-color:var(--amber)}
   input::placeholder{color:var(--ph)}
   .hide{display:none!important}   /* must beat .cover{display:flex} below */
+  /* While the AI is working, every tap lands here instead of on a button. A
+     second tap used to start a second call whose answer replaced the first -
+     the question on screen would change by itself a moment after it appeared. */
+  #veil{position:fixed;inset:0;z-index:40;background:transparent;cursor:progress}
   .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
   .cover img{width:64px;height:88px;object-fit:cover;border-radius:4px;border:1px solid var(--line);
     box-shadow:3px 3px 12px -6px rgba(0,0,0,.95)}
@@ -227,6 +245,7 @@
     <button id="saveSetup" class="big amber" style="margin-top:12px">Save</button>
   </div>
 
+  <div id="veil" class="hide"></div>
   <div id="err" class="box err hide"><p id="errText"></p></div>
   <div id="busy" class="box busy hide"><div class="spin"></div><span id="busyText"></span></div>
 
@@ -325,7 +344,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   async function api(path, opts) {
@@ -409,7 +428,12 @@
       w.appendChild(t);
     }
   }
-  function busy(t) { $("busy").classList.toggle("hide", !t); $("busyText").textContent = t || ""; }
+  function busy(t) {
+    $("busy").classList.toggle("hide", !t);
+    $("busyText").textContent = t || "";
+    $("veil").classList.toggle("hide", !t);
+    S.working = !!t;
+  }
   function err(t) { $("err").classList.toggle("hide", !t); $("errText").textContent = t || ""; }
   function stars(n) { n = Math.max(1, Math.min(5, parseInt(n) || 3)); return "★".repeat(n); }
 
@@ -584,6 +608,7 @@
 
   // ---------- photo → title
   async function onPhoto(e) {
+    if (S.working) return;
     var f = e.target.files && e.target.files[0]; if (!f) return;
     err(""); busy("Looking at your book...");
     try {
@@ -609,6 +634,7 @@
   function T(en, ko) { return L() === "ko" ? ko : en; }
 
   async function startQuiz() {
+    if (S.working) return;
     if (!S.title) return;
     err(""); busy(T("Making your questions...", "문제를 만드는 중..."));
     try {
@@ -667,11 +693,12 @@
 
   // ---------- follow-up (feelings)
   async function makeFollowups() {
+    if (S.working) return;
     busy(T("The AI wants to ask you a few things...", "AI가 몇 가지 더 물어보고 싶대요..."));
     try {
       var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " → " + RN() + " picked: " + a.pickedText; }).join("\n");
-      var raw = await ai(RN() + ' is ' + RL() + '.\nThey just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + ' and answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how HE felt about it.\nAsk 3 short questions about his own opinion and feelings — things only he can answer.\nGood things to ask about: which character he liked most, how the ending made him feel, whether he\'d tell a friend to read it, what part surprised him, whether he wants a similar book next.\n\n' + voice() + ' Give 4 answer choices he can just tap. Make the choices feel different from each other, and make them sound like something they would actually say.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
-        [{ role: "user", content: "Ask him" }], 1200);
+      var raw = await ai(RN() + ' is ' + RL() + '.\nThey just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + ' and answered these quiz questions:\n' + lines + '\n\nThose told you what happened in the book, but not how they felt about it.\nAsk 3 short questions about their own opinion and feelings — things only they can answer.\nGood things to ask about: which character they liked most, how the ending made them feel, whether they would tell a friend to read it, what part surprised them, whether they want a similar book next.\n\nWrite every question in the second person — say "you". Never use their name and never write about them in the third person; you are speaking to them directly.\n\n' + voice() + ' Give 4 answer choices they can just tap. Make the choices feel different from each other, and make them sound like something they would actually say.\n\nUse exactly this format, three times:\n<fq>\ntext: (the question)\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+        [{ role: "user", content: "Ask them" }], 1200);
       var fq = blocks(raw, "fq").filter(function (q) { return q.text && q.a && q.b && q.c && q.d; }).slice(0, 3);
       if (!fq.length) { busy(""); return makeReport(); }
       S.fqs = fq; S.fi = 0; S.fans = [];
@@ -683,7 +710,7 @@
     var q = S.fqs[S.fi], F = $("follow"); F.innerHTML = "";
     var b = el("div", "box");
     b.innerHTML = '<div class="bar">' + S.fqs.map(function (_, i) { return '<i class="' + (i <= S.fi ? "v" : "") + '"></i>'; }).join("") + '</div>' +
-      '<div style="font-size:11px;color:var(--violet);margin-bottom:8px">✦ ' + T("Only you can answer this one", "이건 헨리만 답할 수 있어요") + ' — ' + (S.fi + 1) + ' / ' + S.fqs.length + '</div>' +
+      '<div style="font-size:11px;color:var(--violet);margin-bottom:8px">✦ ' + T("Only you can answer this one", "이건 " + RN() + "만 답할 수 있어요") + ' — ' + (S.fi + 1) + ' / ' + S.fqs.length + '</div>' +
       '<div class="q">' + esc(q.text) + '</div><div id="fopts"></div>';
     F.appendChild(b);
     ["a", "b", "c", "d"].forEach(function (L) { var o = el("button", "opt", esc(q[L])); o.onclick = function () { answerFollow(L); }; $("fopts").appendChild(o); });
@@ -731,9 +758,10 @@
     P.appendChild(skip);
   }
   async function reroll() {
+    if (S.working) return;
     var q = S.fqs[S.fi]; busy(T("Thinking of other choices...", "다른 보기를 생각하는 중..."));
     try {
-      var raw = await ai(RN() + ' (' + RL() + ') was asked: "' + q.text + '"\nNone of these fit him: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' '  + voice() + '\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
+      var raw = await ai(RN() + ' (' + RL() + ') was asked: "' + q.text + '"\nNone of these fit them: ' + q.a + ' / ' + q.b + ' / ' + q.c + ' / ' + q.d + '\nGive 4 completely different choices for the same question. ' + (L() === "ko" ? "In simple Korean." : "Simple words.") + ' '  + voice() + '\n\n<fq>\ntext: ' + q.text + '\na: (choice)\nb: (choice)\nc: (choice)\nd: (choice)\n</fq>',
         [{ role: "user", content: "Other choices please" }], 600);
       var f = blocks(raw, "fq")[0]; if (f && f.a) { f.text = q.text; S.fqs[S.fi] = f; renderFollow(); }
     } catch (x) { }
@@ -744,15 +772,16 @@
   var SECTIONS = [["summary", "What it's about", "무슨 이야기예요?"], ["favorite", "My favorite part", "제일 좋았던 부분"], ["feeling", "How it made me feel", "읽고 나서 느낌"], ["learned", "What I take from it", "배운 것"], ["recommend", "Would I tell a friend?", "친구에게 추천할까?"]];
 
   async function makeReport() {
+    if (S.working) return;
     busy(T("Writing your book report...", "독후감을 쓰는 중..."));
     try {
       var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + "\n   " + RN() + " answered: " + a.pickedText; }).join("\n");
-      var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  " + RN() + " said: " + a.answer; }).join("\n") : "(he didn't add anything)";
-      var AUDN = { teacher: "his teacher — so a little more careful and complete, but still his own words", friend: "a friend — so casual, fun, like he's telling them at recess", me: "just himself — a private note, honest, can be short" };
+      var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  " + RN() + " said: " + a.answer; }).join("\n") : "(they didn't add anything)";
+      var AUDN = { teacher: "their teacher — so a little more careful and complete, but still their own words", friend: "a friend — so casual and easy, the way they would actually tell someone", me: "only themselves — a private note, honest, can be short" };
       var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
-      var DESC = { summary: "(2 sentences about what the book is about, based on his answers)", favorite: "(1-2 sentences about the part or character he liked, in his voice)", feeling: "(1-2 sentences about how the book made him feel, based on what he said)", learned: "(1 sentence about what he might take away from it)", recommend: "(1 short sentence — would he tell a friend to read it, and why)" };
+      var DESC = { summary: "(2 sentences about what the book is about, based on their answers)", favorite: "(1-2 sentences about the part or character they liked, in their voice)", feeling: "(1-2 sentences about how the book made them feel, based on what they said)", learned: "(1 sentence about what they might take away from it)", recommend: "(1 short sentence — would they tell a friend to read it, and why)" };
       var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
-      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — honest, unforced, the way they would actually put it. ' + voice() + '\n' + (L() === "ko" ? voice() : "") + '\nNever invent things he didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat he answered about the story:\n' + lines + '\n\nWhat he said about how he felt:\n' + feel + '\n\nHis feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what he said)\n</report>',
+      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — honest, unforced, the way they would actually put it. ' + voice() + '\n' + (L() === "ko" ? voice() : "") + '\nWrite it in the first person, as them — "I", never their name and never "he" or "she". Never invent things they didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat they answered about the story:\n' + lines + '\n\nWhat they said about how they felt:\n' + feel + '\n\nTheir feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what they said)\n</report>',
         [{ role: "user", content: "Write the report" }], 900);
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
@@ -795,20 +824,35 @@
     }
 
     var box = el("div", "box");
-    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + (S.editingId ? T("READ IT AGAIN — WHAT WOULD YOU CHANGE?", "다시 읽어봐요 — 뭘 고칠까요?") : T("READ IT — IS THIS YOU?", "읽어봐요 — 헨리 말이 맞아요?")) + '</div>' +
+    box.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:6px">✦ ' + (S.editingId ? T("READ IT AGAIN — WHAT WOULD YOU CHANGE?", "다시 읽어봐요 — 뭘 고칠까요?") : T("READ IT — IS THIS YOU?", "읽어봐요 — " + RN() + " 말이 맞아요?")) + '</div>' +
       '<div style="font-size:17px;font-weight:900;line-height:1.25;margin-bottom:2px">' + esc(S.title) + '</div>' +
       '<div style="font-size:11px;color:var(--sub);margin-bottom:4px">' + (AUDL[S.audience] || "") + '</div>' +
       '<div style="font-size:15px;color:var(--gold);margin-bottom:14px">' + stars(r.stars) + '</div>' +
-      '<p class="note" style="margin:0 0 12px">' + T("Tap a part to change how it's written.", "고치고 싶은 부분을 눌러요.") + '</p><div id="secs"></div>';
+      '<p class="note" style="margin:0 0 12px">' + T("Every part has a ✎ — tap it to change how that part is written.", "부분마다 ✎ 가 있어요. 누르면 그 부분을 고칠 수 있어요.") + '</p><div id="secs"></div>';
     R.appendChild(box);
 
     order.forEach(function (k) {
       var sec = SECTIONS.filter(function (x) { return x[0] === k; })[0];
       if (!sec || !r[k]) return;
       var d = el("div", "sec");
-      d.style.cssText = "padding:11px 12px;border-radius:11px;background:var(--well);margin-bottom:10px;cursor:pointer";
-      d.innerHTML = '<h5>' + T(sec[1], sec[2]) + '</h5><p>' + esc(r[k]) + '</p><div class="fixrow hide" id="fix_' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div><div id="alt_' + k + '"></div>';
-      d.onclick = function (e) { if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return; var row = $("fix_" + k); row.classList.toggle("hide"); };
+      d.className = "sec fixable";
+      d.style.cssText = "padding:12px 13px;border-radius:14px;background:var(--well);margin-bottom:10px;cursor:pointer";
+      // The chips used to be invisible until you happened to tap the paragraph.
+      // Now every part wears the handle, and the first one is already open so the
+      // mechanism is shown once rather than explained.
+      var open0 = (order.filter(function (kk) { return r[kk]; })[0] === k);
+      d.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+          '<h5 style="margin:0;flex:1">' + T(sec[1], sec[2]) + '</h5>' +
+          '<span class="pen" id="pen_' + k + '">✎ ' + T("fix this", "고치기") + '</span></div>' +
+        '<p>' + esc(r[k]) + '</p>' +
+        '<div class="fixrow' + (open0 ? '' : ' hide') + '" id="fix_' + k + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:11px"></div><div id="alt_' + k + '"></div>';
+      d.onclick = function (e) {
+        if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT") return;
+        var row = $("fix_" + k), pen = $("pen_" + k);
+        row.classList.toggle("hide");
+        pen.classList.toggle("on", !row.classList.contains("hide"));
+      };
+      if (open0) setTimeout(function () { var pn = $("pen_" + k); if (pn) pn.classList.add("on"); }, 0);
       $("secs").appendChild(d);
       var row = $("fix_" + k);
       FIXES.forEach(function (f) {
@@ -846,6 +890,7 @@
   }
 
   async function fixSection(k, f, custom) {
+    if (S.working) return;
     var before = S.draft[k];
     busy(T("Rewriting...", "다시 쓰는 중..."));
     try {
@@ -865,6 +910,7 @@
   }
 
   async function saveReport() {
+    if (S.working) return;
     busy(T("Saving...", "저장하는 중..."));
     try {
       var base = S.editBase;
