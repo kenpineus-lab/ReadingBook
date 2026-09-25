@@ -127,6 +127,14 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
   `RN()` / `RL()` / `voice()` and use *they*; follow-up questions are written in the second
   person ("you") and the report in the first ("I"). Grep for `he|his|him|헨리` before
   committing a prompt change.
+- **Never show a status code to a child.** The server classifies every upstream failure
+  (`no_credit`, `rate_limited`, `overloaded`, `bad_key`, `image_too_big`, `upstream`) and the
+  page maps each to a sentence naming what a person has to go and do, with the raw text one
+  tap away behind "show details". Catch blocks call `fail(e, fallback)`, never `err(e.message)`
+  — a swallowed reason once cost an evening working out that the API account was simply empty.
+- **Photos are shrunk on the device** (`shrink()`, 1024px long edge, JPEG 0.82) before they
+  ever reach the network. The API downsizes big images anyway, so this is about the upload
+  completing on a tablet, not about tokens.
 - **One tap, one AI call.** `busy()` raises `#veil`, a full-screen pointer trap, and sets
   `S.working`; every async entry point returns early while it is set. Without this a second
   tap started a second call whose answer replaced the first — the question on screen changed

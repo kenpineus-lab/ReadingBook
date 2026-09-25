@@ -173,7 +173,23 @@ async def ai(req: AIReq, x_family_code: str | None = Header(default=None)):
             json={"model": "claude-sonnet-4-6", "max_tokens": min(req.max_tokens, 3000), "system": req.system, "messages": req.messages},
         )
     if r.status_code != 200:
-        raise HTTPException(502, f"anthropic error: {r.text[:300]}")
+        # The page can't act on a raw upstream blob, and a child certainly can't.
+        # Classify it so the screen can say what actually needs doing.
+        body = r.text[:400]
+        low = body.lower()
+        if "credit balance is too low" in low:
+            code = "no_credit"
+        elif r.status_code == 429 or "rate_limit" in low:
+            code = "rate_limited"
+        elif r.status_code == 529 or "overloaded" in low:
+            code = "overloaded"
+        elif r.status_code in (401, 403) or "authentication" in low or "invalid x-api-key" in low:
+            code = "bad_key"
+        elif "image" in low and "too large" in low:
+            code = "image_too_big"
+        else:
+            code = "upstream"
+        raise HTTPException(502, {"code": code, "status": r.status_code, "detail": body})
     data = r.json()
     text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
     return {"text": text}
