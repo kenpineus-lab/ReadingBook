@@ -219,14 +219,13 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
   set a 9-year-old's writing across 140 characters. Also `@media (hover:none)` for thumb-sized
   targets and `max-height:520px` for a phone held sideways.
 - Two themes, one palette contract: `:root` is night, `html[data-theme="day"]` overrides the same tokens, and `bl:theme` remembers the choice per device. Any new surface colour must be a token (`--well`, `--chip`, `--chip2`, `--dim`, `--ph`, `--onAccent`) — a raw hex in CSS or in a JS inline style will survive the theme swap and look broken in daylight.
-- **The app is called Starry (별밤).** Every finished book is a star, and the library screen
-  says so: `skyBox()` draws a month's sky with `SKY_MAX` = 12 fixed star positions, one lit per
-  book finished this calendar month, in reading order. Tapping a lit star opens that report.
-  Past twelve it says the sky is full and how many more besides. It sits at the top of a
-  personal shelf and never on the family view, and it keeps its night background in both
-  themes — at noon on the caldera you cannot see stars, and this is the one thing that should
-  read as *yours* rather than as the room.
-  Every finished book is a star. The wordmark is STARRY,
+- **The app is called Starry (별밤).** The name lives in the night theme and the mark, not in
+  a counter.
+  **A month's sky of twelve stars was built and then removed** — it is worth knowing why before
+  anyone builds it again. Any grid with a cap reads as a target, and a target reads as a
+  ceiling: twelve stars told a child twelve was the number to get. And it needed explaining,
+  which for a nine-year-old's own screen is the same as not working. A number he can read is
+  better than a picture he has to be taught. The wordmark is STARRY,
   the mark is an open book under a night sky, and the name is the argument for how the library
   screen should eventually look: a sky that fills up, not a counter.
 - **Two skies, one place.** Day is Santorini at noon — whitewash, cobalt, the village at the
