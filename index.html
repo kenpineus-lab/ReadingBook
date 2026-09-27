@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Book Lab" />
+<meta name="apple-mobile-web-app-title" content="Starry" />
 <meta name="theme-color" content="#F4FAFE" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
@@ -15,7 +15,7 @@
 <!-- Quicksand is round wherever a letter can be round; Gowun Dodum is the softest
      Korean face an adult can still read a page of. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Gowun+Dodum&display=swap" />
-<title>Book Lab</title>
+<title>Starry · 별밤</title>
 <style>
   /* ── Santorini ───────────────────────────────────────────────────────────
      Whitewashed walls, cobalt domes, one sun, the Aegean at the foot of the
@@ -70,6 +70,12 @@
     opacity:var(--shelfO);-webkit-mask-image:linear-gradient(180deg,transparent,#000 42%);
     mask-image:linear-gradient(180deg,transparent,#000 42%)}
   html[data-theme="night"] .shelf{filter:brightness(.62) saturate(1.25) hue-rotate(-6deg)}
+  /* Night is the same village under Van Gogh's sky. Day keeps the noon light. */
+  .sky{position:fixed;inset:0;bottom:auto;height:min(78vh,900px);pointer-events:none;z-index:0;
+    background:url(assets/stars.svg) no-repeat top center;background-size:cover;opacity:0;
+    transition:opacity .35s;-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent);
+    mask-image:linear-gradient(180deg,#000 55%,transparent)}
+  html[data-theme="night"] .sky{opacity:1}
   .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:22px 15px 180px}
 
   .top{display:flex;align-items:center;gap:8px;margin-bottom:2px}
@@ -250,7 +256,7 @@
 <div class="wrap">
   <div class="top">
     <img class="mark" src="assets/mark.svg" alt="" />
-    <h1>BOOK LAB</h1>
+    <h1>STARRY</h1>
     <button id="parentBtn" class="sm hide" style="margin-left:auto" title="For grown-ups">📈</button>
     <button id="themeBtn" class="sm" title="Day / night">☾</button>
     <button id="homeBtn" class="sm hide">My books</button>
@@ -278,6 +284,7 @@
   <div id="parent" class="hide"></div>
 </div>
 
+<div class="sky" aria-hidden="true"></div>
 <div class="shelf" aria-hidden="true"></div>
 
 <script>
@@ -1474,7 +1481,7 @@
     var r = b.report || {}, st = Math.max(1, Math.min(5, parseInt(r.stars) || 3));
     return ["BOOK REPORT — " + b.title + (b.author ? " by " + b.author : ""), "Read by " + bookReader(b) + "   Finished " + b.date + "   " + "★".repeat(st) + "☆".repeat(5 - st), "",
       ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
-        .map(function (k) { return r[k]; }).filter(Boolean).join("\n\n"), "", "— written in Book Lab"].filter(Boolean).join("\n");
+        .map(function (k) { return r[k]; }).filter(Boolean).join("\n\n"), "", "— written in Starry"].filter(Boolean).join("\n");
   }
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
@@ -1559,7 +1566,7 @@
       .map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}p{margin:0 0 .8em;font-size:15.5px;text-indent:1.3em}p:first-of-type{text-indent:0}p:first-of-type::first-letter{float:left;font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:#1E7BC8;font-weight:700}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
       paras +
-      '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &middot; written in Book Lab</div></body></html>');
+      '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &middot; written in Starry</div></body></html>');
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 

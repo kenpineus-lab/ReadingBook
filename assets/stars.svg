@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMin slice">
+  <!-- The night sky over the village. Four-point sparkles, the same shape the app
+       uses for "you two read it differently", with Van Gogh's swirls brushed
+       around the brightest of them. Night theme only. -->
+  <defs>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#F5C453" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#F5C453" stop-opacity="0"/>
+    </radialGradient>
+    <g id="sp">
+      <path d="M0 -10 Q0 0 10 0 Q0 0 0 10 Q0 0 -10 0 Q0 0 0 -10Z" fill="#F7D278"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#5E93C9" stroke-opacity=".30" stroke-linecap="round">
+    <path d="M170 150q54-42 92 6t-54 66q-70 18-86-42t76-72q92-18 118 56" stroke-width="7"/>
+    <path d="M900 120q40-31 68 4t-40 49q-52 14-64-31t56-54" stroke-width="5.5"/>
+    <path d="M560 300q30-24 52 3t-31 38q-40 10-49-24" stroke-width="4.5"/>
+  </g>
+
+  <g>
+    <circle cx="208" cy="162" r="86" fill="url(#glow)"/>
+    <circle cx="928" cy="132" r="64" fill="url(#glow)"/>
+    <circle cx="596" cy="312" r="46" fill="url(#glow)"/>
+    <circle cx="1084" cy="356" r="40" fill="url(#glow)"/>
+    <circle cx="352" cy="430" r="34" fill="url(#glow)"/>
+  </g>
+
+  <g>
+    <use href="#sp" transform="translate(208 162) scale(2.6)"/>
+    <use href="#sp" transform="translate(928 132) scale(1.9)"/>
+    <use href="#sp" transform="translate(596 312) scale(1.4)"/>
+    <use href="#sp" transform="translate(1084 356) scale(1.2)"/>
+    <use href="#sp" transform="translate(352 430) scale(1.0)"/>
+    <use href="#sp" transform="translate(760 210) scale(.8)" opacity=".85"/>
+    <use href="#sp" transform="translate(120 360) scale(.7)" opacity=".8"/>
+    <use href="#sp" transform="translate(1012 196) scale(.6)" opacity=".75"/>
+    <use href="#sp" transform="translate(470 120) scale(.65)" opacity=".8"/>
+    <use href="#sp" transform="translate(690 440) scale(.55)" opacity=".7"/>
+    <use href="#sp" transform="translate(268 540) scale(.5)" opacity=".6"/>
+    <use href="#sp" transform="translate(860 520) scale(.6)" opacity=".65"/>
+    <use href="#sp" transform="translate(1140 520) scale(.5)" opacity=".6"/>
+    <use href="#sp" transform="translate(40 220) scale(.5)" opacity=".6"/>
+    <use href="#sp" transform="translate(520 600) scale(.45)" opacity=".5"/>
+    <use href="#sp" transform="translate(980 640) scale(.45)" opacity=".5"/>
+    <use href="#sp" transform="translate(160 660) scale(.4)" opacity=".45"/>
+    <use href="#sp" transform="translate(640 700) scale(.4)" opacity=".4"/>
+  </g>
+</svg>

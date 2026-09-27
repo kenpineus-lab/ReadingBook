@@ -1,4 +1,4 @@
-# Book Lab — 배포 가이드
+# Starry · 별밤 — 배포 가이드
 
 저장소: https://github.com/kenpineus-lab/ReadingBook
 화면 주소(배포 후): https://kenpineus-lab.github.io/ReadingBook/
@@ -95,7 +95,7 @@ curl -X POST https://<서버주소>/households   -H "x-admin-code: <ADMIN_CODE>"
 1. 위 주소를 Safari/Chrome으로 열기
 2. **ONE-TIME SETUP** 화면에 서버 주소와 FAMILY_CODE 입력 → Save
    (이 두 값은 그 기기에만 저장됩니다. 페이지 코드에는 없어요)
-3. 공유 → **홈 화면에 추가** → 이름 "Book Lab"
+3. 공유 → **홈 화면에 추가** → 이름 "Starry"
 
 이제 헨리는 아이콘 하나로 들어가고, 책 사진 찍고, 버튼만 누르면 됩니다.
 

@@ -1,4 +1,4 @@
-# Book Lab — CLAUDE.md
+# Starry · 별밤 — CLAUDE.md
 
 A reading-log app for the family — Henry (3rd grade), Jeremy, Rebecca, and Han (Dad). Bilingual EN/KO, used on a tablet. He photographs a book cover, answers a tap-only quiz, tells the AI how he felt, plans and edits his own book report, and keeps stats. The AI is deliberately shown to be *fallible* — it guesses answers and Henry, who actually read the book, catches its mistakes.
 
@@ -219,6 +219,13 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
   set a 9-year-old's writing across 140 characters. Also `@media (hover:none)` for thumb-sized
   targets and `max-height:520px` for a phone held sideways.
 - Two themes, one palette contract: `:root` is night, `html[data-theme="day"]` overrides the same tokens, and `bl:theme` remembers the choice per device. Any new surface colour must be a token (`--well`, `--chip`, `--chip2`, `--dim`, `--ph`, `--onAccent`) — a raw hex in CSS or in a JS inline style will survive the theme swap and look broken in daylight.
+- **The app is called Starry (별밤).** Every finished book is a star. The wordmark is STARRY,
+  the mark is an open book under a night sky, and the name is the argument for how the library
+  screen should eventually look: a sky that fills up, not a counter.
+- **Two skies, one place.** Day is Santorini at noon — whitewash, cobalt, the village at the
+  foot of the page. Night is the same village under Van Gogh's sky: `assets/stars.svg` fades in
+  on `html[data-theme="night"] .sky` and the village dims behind it. Van Gogh's cobalt and gold
+  were already the palette, which is why the two concepts sit together instead of fighting.
 - **The concept is Santorini, and it is not decoration.** Whitewash, cobalt domes, one sun,
   the Aegean at the foot of the page. Day is noon on the caldera, night is the same island
   after dark — never a different place. Colour means something: cobalt is the action, aegean

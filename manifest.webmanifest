@@ -1,6 +1,6 @@
 {
-  "name": "Book Lab",
-  "short_name": "Book Lab",
+  "name": "Starry · 별밤",
+  "short_name": "Starry",
   "description": "Read the book, then see how much the AI really knows about it.",
   "start_url": "./",
   "scope": "./",
