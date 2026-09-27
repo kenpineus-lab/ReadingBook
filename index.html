@@ -944,8 +944,10 @@
   async function openParent(id) {
     if (!(await unlock())) return;
     var kids = PROFILES.filter(function (x) { return !x.adult; });
-    S.pkid = id || S.pkid || (kids[0] || PROFILES[0] || {}).id;
-    if (!S.pkid) { err(T("Nobody to look at yet.", "아직 볼 사람이 없어요.")); return; }
+    if (!kids.length) { err(T("This is for watching a child's reading, and there isn't one yet.",
+                              "아이의 독서를 보는 화면이에요. 아직 아이가 없어요.")); return; }
+    if (!kids.filter(function (x) { return x.id === (id || S.pkid); }).length) id = kids[0].id;
+    S.pkid = id || S.pkid;
     show("parent");
     $("parent").innerHTML = '<div class="box busy"><div class="spin"></div><span>' +
       T("Looking...", "보는 중...") + '</span></div>';
@@ -960,17 +962,38 @@
     P2.innerHTML = "";
 
     var pick = el("div", "box");
-    pick.innerHTML = '<div class="lbl">FOR GROWN-UPS</div>';
-    var prow = el("div"); prow.style.cssText = "display:flex;gap:7px;flex-wrap:wrap";
-    PROFILES.forEach(function (pr) {
-      var on = pr.id === S.pkid;
-      var b = el("button", "sm", pr.icon + " " + pr.name);
-      b.style.cssText = "padding:7px 12px;font-size:12px;font-weight:700;" +
-        (on ? "color:var(--onAccent);background:var(--amber)" : "color:var(--sub)");
-      b.onclick = function () { openParent(pr.id); };
-      prow.appendChild(b);
-    });
-    pick.appendChild(prow);
+    // The way out belongs at the top. It used to be one button below everything.
+    var bar = el("div");
+    bar.style.cssText = "display:flex;align-items:center;gap:10px;margin-bottom:13px";
+    var out = el("button", "sm", "‹ " + T("My books", "내 책장"));
+    out.style.cssText = "color:var(--amber);background:var(--chip2);font-weight:700";
+    out.onclick = function () { show("library"); };
+    var ttl = el("div", "lbl", T("FOR GROWN-UPS", "부모 화면"));
+    ttl.style.cssText = "margin:0;flex:1;text-align:right";
+    bar.appendChild(out); bar.appendChild(ttl);
+    pick.appendChild(bar);
+
+    // Children only, drawn as a segmented control. Two identical chip rows that
+    // do different things is a trap: on the library that row switches shelves,
+    // here it switched which child you were inspecting, and there was no way back.
+    var kids2 = PROFILES.filter(function (x) { return !x.adult; });
+    if (kids2.length > 1) {
+      var lab = el("div", null, T("Watching", "보는 사람"));
+      lab.style.cssText = "font-size:10px;letter-spacing:.09em;color:var(--sub);margin-bottom:7px";
+      pick.appendChild(lab);
+      var prow = el("div");
+      prow.style.cssText = "display:flex;gap:2px;background:var(--well);border:1px solid var(--line);border-radius:999px;padding:3px";
+      kids2.forEach(function (pr) {
+        var on = pr.id === S.pkid;
+        var b = el("button", null, pr.icon + " " + pr.name);
+        b.style.cssText = "flex:1;border:none;cursor:pointer;font-family:var(--ui);font-size:12.5px;" +
+          "font-weight:700;padding:9px 6px;border-radius:999px;" +
+          (on ? "color:var(--onAccent);background:var(--amber)" : "color:var(--sub);background:transparent");
+        b.onclick = function () { openParent(pr.id); };
+        prow.appendChild(b);
+      });
+      pick.appendChild(prow);
+    }
     P2.appendChild(pick);
 
     // 1. what they are reading - the thing this app exists to collect
@@ -1050,7 +1073,7 @@
       P2.appendChild(lb);
     }
 
-    var back = el("button", "big plain", "\u2039 " + T("Back", "돌아가기"));
+    var back = el("button", "big plain", "‹ " + T("Back to my books", "내 책장으로 돌아가기"));
     back.onclick = function () { show("library"); };
     P2.appendChild(back);
   }
