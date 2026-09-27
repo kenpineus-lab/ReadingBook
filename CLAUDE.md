@@ -171,6 +171,16 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
   set a 9-year-old's writing across 140 characters. Also `@media (hover:none)` for thumb-sized
   targets and `max-height:520px` for a phone held sideways.
 - Two themes, one palette contract: `:root` is night, `html[data-theme="day"]` overrides the same tokens, and `bl:theme` remembers the choice per device. Any new surface colour must be a token (`--well`, `--chip`, `--chip2`, `--dim`, `--ph`, `--onAccent`) — a raw hex in CSS or in a JS inline style will survive the theme swap and look broken in daylight.
+- **The concept is Santorini, and it is not decoration.** Whitewash, cobalt domes, one sun,
+  the Aegean at the foot of the page. Day is noon on the caldera, night is the same island
+  after dark — never a different place. Colour means something: cobalt is the action, aegean
+  is agreement, bougainvillea is where the two readings differ, the sun is only ever the
+  stars, terracotta is only ever an error. Type is Quicksand + Gowun Dodum (round wherever a
+  letter can be), radii are large, primary buttons are full pills; the report keeps its serif
+  because it is a page from a book.
+- **SVG comments cannot contain `--`.** A row of dashes as a section rule makes the whole
+  file an XML parse error and the artwork silently does not render. Parse every asset with
+  `xml.dom.minidom` before committing it.
 - Artwork lives in `assets/` as real files, not data URIs — they are same-origin on Pages and stay editable. The palette is warm library (leather, paper cream, gilt); no flat yellow.
 - `.hide` must stay `display:none!important` — `.cover{display:flex}` is defined after it and used to win.
 - Do not add a build step, a framework, or `localStorage` for book data. The whole point is that the page is a dumb client and the server + GitHub backup are the source of truth.

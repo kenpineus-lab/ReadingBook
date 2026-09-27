@@ -6,184 +6,187 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Book Lab" />
-<meta name="theme-color" content="#EFE6D4" />
+<meta name="theme-color" content="#F4FAFE" />
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
 <link rel="manifest" href="manifest.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Quicksand is round wherever a letter can be round; Gowun Dodum is the softest
+     Korean face an adult can still read a page of. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Gowun+Dodum&display=swap" />
 <title>Book Lab</title>
 <style>
-  /* A library at night: warm board, paper-cream text, gilt on the edges.
-     Nothing here is lemon yellow - the accents come off book cloth and
-     spine lettering. */
-  /* Daylight is the default; `bl:theme` = "night" opts into the other one.
-     Both define the same token set - never a raw hex outside these blocks. */
-  :root{                      /* night: the library after hours */
-    --bg:#15110D; --bg2:#1A1611; --panel:#1E1A14; --panel2:#252017; --line:#332B21;
-    --text:#EFE5D4; --sub:#9C8B75; --ink:#D7CBB6;
-    --well:#211C15;    /* inset surfaces - stat tiles, inputs, report sections */
-    --chip:#251F17; --chip2:#2A2318; --dim:#241E17; --ph:#6E6151;
-    --amber:#D69447;   /* tan leather - the primary action */
-    --green:#84A98C;   /* library green - agreement */
-    --gold:#D9B45B;    /* gilt - stars, rules */
-    --red:#C4614B;     /* book cloth - errors only */
-    --violet:#A98BC4;  /* ribbon - where the two readings differ */
-    --onAccent:#1A1209;
-    --amberTop:#E0A257; --greenTop:#92B79A;
-    --grain:overlay; --grainO:.05; --shelfO:.24;
+  /* ── Santorini ───────────────────────────────────────────────────────────
+     Whitewashed walls, cobalt domes, one sun, the Aegean at the foot of the
+     page. Daylight is the default; night is the same island after dark, not a
+     different place. Every surface colour is a token so the two stay in step. */
+  :root{                       /* day: noon on the caldera */
+    --bg:#F4FAFE; --bg2:#FFFFFF; --panel:#FFFFFF; --panel2:#FFFFFF; --line:#DCEAF5;
+    --text:#1E3D58; --sub:#7B97AD; --ink:#2A4A66;
+    --well:#F5FAFE; --chip:#EAF3FB; --chip2:#DCEDF9; --dim:#F0F7FC; --ph:#A8BED0;
+    --amber:#1E7BC8;   /* cobalt dome - the primary action */
+    --green:#0E9384;   /* aegean - yes, that's mine */
+    --gold:#F0B429;    /* the sun - stars, and the only warm note */
+    --red:#E1776B;     /* terracotta - errors only */
+    --violet:#C9578E;  /* bougainvillea - where the two readings differ */
+    --onAccent:#FFFFFF;
+    --amberTop:#3E95DD; --greenTop:#19AC9A;
+    --grain:multiply; --grainO:.03; --shelfO:.95;
+    --shadow:26,74,110;
+    --ui:'Quicksand','Gowun Dodum',system-ui,-apple-system,'Segoe UI',sans-serif;
     --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
   }
-  html[data-theme="day"]{     /* daylight: cool white, sky, and air */
-    --bg:#F7FAFC; --bg2:#FFFFFF; --panel:#FFFFFF; --panel2:#FFFFFF; --line:#E6EEF4;
-    --text:#26343E; --sub:#7C8D9A; --ink:#33444F;
-    --well:#F6FAFD; --chip:#EEF4F9; --chip2:#E3F0F9; --dim:#F1F6FA; --ph:#A9B8C3;
-    --amber:#4FB6E8;   /* sky - the primary action */
-    --green:#41C7A6;   /* seafoam - yes, that's mine */
-    --gold:#FFC24D;    /* sunshine - stars, and the only warm note left */
-    --red:#FF7C8A;
-    --violet:#8C8DF0;  /* periwinkle - where the two readings differ */
-    --onAccent:#06293A;
-    --amberTop:#72C9F0; --greenTop:#62D9BC;
-    --grain:multiply; --grainO:.018; --shelfO:.14;
+  html[data-theme="night"]{    /* night: lamps on the cliff, sea gone dark */
+    --bg:#0E2436; --bg2:#123049; --panel:#173D5C; --panel2:#1B4568; --line:#2A5D83;
+    --text:#EAF3FA; --sub:#92B3CB; --ink:#D8E8F4;
+    --well:#123049; --chip:#194669; --chip2:#1F547B; --dim:#153A57; --ph:#6F92AD;
+    --amber:#3E92D8; --green:#1FA896; --gold:#F5C453; --red:#E88274; --violet:#E279AC;
+    --onAccent:#06243A;
+    --amberTop:#5FA9E6; --greenTop:#33BFAC;
+    --grain:overlay; --grainO:.05; --shelfO:.55;
+    --shadow:0,0,0;
   }
+
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
-  body{margin:0;color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  body{margin:0;color:var(--text);font-family:var(--ui);font-weight:500;
     background:
-      radial-gradient(120% 70% at 50% -12%, rgba(217,180,91,.13) 0%, rgba(217,180,91,.04) 38%, transparent 68%),
-      linear-gradient(180deg, var(--bg2) 0%, var(--bg) 46%, #100D0A 100%);
+      radial-gradient(120% 60% at 50% -12%, rgba(120,190,235,.20) 0%, rgba(180,220,242,.07) 46%, transparent 74%),
+      linear-gradient(180deg, #FFFFFF 0%, var(--bg) 44%, #E6F2FA 100%);
     background-attachment:fixed;min-height:100vh}
-  html[data-theme="day"] body{
+  html[data-theme="night"] body{
     background:
-      radial-gradient(130% 62% at 50% -14%, rgba(120,195,240,.20) 0%, rgba(176,222,245,.08) 44%, transparent 74%),
-      linear-gradient(180deg, #FFFFFF 0%, var(--bg) 42%, #EDF3F8 100%);
+      radial-gradient(120% 60% at 50% -12%, rgba(90,160,215,.22) 0%, rgba(40,90,130,.10) 46%, transparent 74%),
+      linear-gradient(180deg, #14314A 0%, var(--bg) 46%, #081A29 100%);
     background-attachment:fixed}
-  /* white on white needs the shadow to do the separating, not a border */
-  html[data-theme="day"] .box{border-color:#EAF1F6;
-    box-shadow:0 2px 5px -3px rgba(40,70,92,.09), 0 14px 30px -22px rgba(40,70,92,.28)}
-  html[data-theme="day"] .row>div{background:var(--well);border-color:#EAF1F6}
-  html[data-theme="day"] .sec.fixable{border-color:#DFE9F0}
-  html[data-theme="day"] .tag{color:#8FA0AC}
-  html[data-theme="day"] h1{color:#3FA8DC}
-  /* pressed-paper grain over the whole ground */
+  /* stucco, barely there */
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-    background:url(assets/paper.svg) repeat;background-size:220px 220px;opacity:var(--grainO);mix-blend-mode:var(--grain)}
-  /* the shelf sits at the foot of the page, well behind the reading */
-  .shelf{position:fixed;left:0;right:0;bottom:0;height:120px;pointer-events:none;z-index:0;
-    background:url(assets/shelf.svg) repeat-x bottom center;background-size:auto 120px;
-    opacity:var(--shelfO);-webkit-mask-image:linear-gradient(180deg,transparent,#000 78%);
-    mask-image:linear-gradient(180deg,transparent,#000 78%)}
-  .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:20px 15px 150px}
+    background:url(assets/paper.svg) repeat;background-size:220px 220px;
+    opacity:var(--grainO);mix-blend-mode:var(--grain)}
+  /* the village, at the foot of every screen */
+  .shelf{position:fixed;left:0;right:0;bottom:0;height:150px;pointer-events:none;z-index:0;
+    background:url(assets/skyline.svg) repeat-x bottom center;background-size:auto 150px;
+    opacity:var(--shelfO);-webkit-mask-image:linear-gradient(180deg,transparent,#000 42%);
+    mask-image:linear-gradient(180deg,transparent,#000 42%)}
+  html[data-theme="night"] .shelf{filter:brightness(.62) saturate(1.25) hue-rotate(-6deg)}
+  .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:22px 15px 180px}
 
   .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
-  .mark{width:32px;height:27px;flex-shrink:0}
-  html[data-theme="day"] .mark{filter:hue-rotate(168deg) saturate(1.25) brightness(.92)}
-  html[data-theme="day"] .shelf{filter:hue-rotate(155deg) saturate(.75) brightness(1.7) contrast(.8)}
-  html[data-theme="day"] h1{text-shadow:none}
-  h1{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;
-    color:var(--gold);margin:0;text-shadow:0 1px 0 rgba(0,0,0,.5)}
-  .tag{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sub);
-    margin:0 0 18px;padding-bottom:14px;border-bottom:1px solid var(--line);line-height:1.5}
+  .mark{width:38px;height:29px;flex-shrink:0}
+  h1{font-family:var(--ui);font-size:23px;font-weight:700;letter-spacing:.13em;
+    color:var(--amber);margin:0}
+  html[data-theme="night"] h1{color:#7FC0F0}
+  .tag{font-size:13px;color:var(--sub);margin:0 0 18px;padding-bottom:14px;
+    border-bottom:1px solid var(--line);line-height:1.6}
 
-  .box{background:linear-gradient(180deg,var(--panel2) 0%, var(--panel) 100%);
-    border:1px solid var(--line);border-radius:22px;padding:18px;margin-bottom:13px;
-    box-shadow:0 1px 0 rgba(255,240,214,.045) inset, 0 10px 26px -18px rgba(0,0,0,.9)}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:26px;
+    padding:19px;margin-bottom:13px;
+    box-shadow:0 2px 6px -4px rgba(var(--shadow),.14), 0 18px 36px -26px rgba(var(--shadow),.40)}
 
-  .big{width:100%;padding:16px;border-radius:17px;border:none;font-size:15px;font-weight:700;
-    cursor:pointer;font-family:inherit;letter-spacing:.01em;transition:transform .08s}
-  .big:active{transform:scale(.985)}
+  .big{width:100%;padding:17px;border-radius:999px;border:none;font-family:var(--ui);
+    font-size:15.5px;font-weight:700;cursor:pointer;letter-spacing:.01em;transition:transform .09s}
+  .big:active{transform:scale(.98)}
   .sm:active,.opt:active{transform:scale(.99)}
   .amber{background:linear-gradient(180deg,var(--amberTop),var(--amber));color:var(--onAccent);
-    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(0,0,0,.35)}
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 8px 18px -10px rgba(30,123,200,.55)}
   .green{background:linear-gradient(180deg,var(--greenTop),var(--green));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
   .dark{background:var(--dim);color:var(--amber);border:1px solid var(--line)}
   .plain{background:var(--dim);color:var(--text);border:1px solid var(--line)}
-  .sm{background:var(--chip);color:var(--sub);border:none;border-radius:999px;padding:8px 13px;
-    font-size:12px;cursor:pointer;font-family:inherit;transition:transform .08s}
+  .sm{background:var(--chip);color:var(--sub);border:none;border-radius:999px;padding:8px 14px;
+    font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ui);transition:transform .09s}
 
-  .opt{width:100%;text-align:left;padding:14px 15px;margin-bottom:9px;border-radius:16px;transition:transform .08s;
-    background:var(--well);border:1px solid var(--line);color:var(--text);font-size:14px;
-    cursor:pointer;font-family:inherit;line-height:1.45}
-  .opt b{color:var(--sub);margin-right:9px;font-family:var(--serif)}
-  .opt.on{background:rgba(214,148,71,.15);border-color:var(--amber)}.opt.on b{color:var(--amber)}
+  .opt{width:100%;text-align:left;padding:14px 16px;margin-bottom:9px;border-radius:20px;
+    background:var(--well);border:1px solid var(--line);color:var(--text);font-size:14.5px;
+    cursor:pointer;font-family:var(--ui);font-weight:500;line-height:1.45;transition:transform .09s}
+  .opt b{color:var(--sub);margin-right:9px;font-weight:700}
+  .opt.on{background:var(--chip2);border-color:var(--amber)}.opt.on b{color:var(--amber)}
   .opt:disabled{cursor:default}.opt.dim{opacity:.45}
-  .dash{width:100%;padding:11px;border-radius:10px;background:transparent;border:1px dashed var(--line);
-    color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit}
+  .dash{width:100%;padding:12px;border-radius:999px;background:transparent;border:1px dashed var(--line);
+    color:var(--sub);font-size:13px;cursor:pointer;font-family:var(--ui);font-weight:600}
 
-  .bar{display:flex;gap:5px;margin-bottom:16px}.bar i{flex:1;height:3px;border-radius:2px;background:var(--dim)}
+  .bar{display:flex;gap:5px;margin-bottom:16px}
+  .bar i{flex:1;height:4px;border-radius:999px;background:var(--dim)}
   .bar i.on{background:var(--amber)}.bar i.v{background:var(--violet)}
 
-  .q{font-family:var(--serif);font-size:19px;font-weight:400;line-height:1.5;margin-bottom:17px;color:var(--text)}
-  .lbl{font-size:10px;color:var(--sub);letter-spacing:.14em;font-weight:700;margin-bottom:12px;text-transform:uppercase}
-  .err{border-color:var(--red)!important;padding:12px}.err p{font-size:12px;color:var(--red);margin:0}
+  .q{font-size:19px;font-weight:600;line-height:1.55;margin-bottom:17px;color:var(--text)}
+  .lbl{font-size:10px;color:var(--sub);letter-spacing:.14em;font-weight:700;
+    margin-bottom:12px;text-transform:uppercase}
+  .err{border-color:var(--red)!important;padding:14px}
+  .err p{font-size:12.5px;color:var(--red);margin:0;font-weight:600}
   #errMore{margin-top:7px!important;font-size:10.5px!important;color:var(--sub)!important;
-    cursor:pointer;text-decoration:underline;word-break:break-word;line-height:1.5}
-  .busy{display:flex;align-items:center;gap:10px;font-size:13px}
-  .spin{width:16px;height:16px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:s 1s linear infinite}
+    cursor:pointer;text-decoration:underline;word-break:break-word;line-height:1.5;font-weight:500!important}
+  .busy{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+  .spin{width:16px;height:16px;border:2px solid var(--amber);border-top-color:transparent;
+    border-radius:50%;animation:s 1s linear infinite}
   @keyframes s{to{transform:rotate(360deg)}}
 
   .row{display:flex;gap:10px;text-align:center;margin-bottom:14px}
-  .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:18px;padding:13px}
+  .row>div{flex:1;background:var(--well);border:1px solid var(--line);border-radius:22px;padding:14px}
   .row>div.tap{cursor:pointer;transition:border-color .12s,background .12s}
   .row>div.tap:hover{border-color:var(--sub)}
-  .row>div.on{border-color:var(--amber);background:var(--chip)}
+  .row>div.on{border-color:var(--amber);background:var(--chip2)}
+  .row .n{font-size:30px;font-weight:700;line-height:1}
+  .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em;font-weight:600}
+
   .langrow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
   .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:999px;
-    padding:6px 11px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:inherit}
-  .lang b{color:var(--text);font-weight:800;margin-left:5px;font-size:12px}
+    padding:7px 13px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:var(--ui);font-weight:700}
+  .lang b{color:var(--text);font-weight:700;margin-left:5px;font-size:12px}
   .lang.on{border-color:var(--amber);color:var(--amber)}.lang.on b{color:var(--amber)}
-  .det h6{margin:0 0 3px;font-size:13px;font-weight:700;font-family:var(--serif)}
-  .det .row2{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
-  .det .row2:first-of-type{border-top:none}
-  .det .mini{font-size:11px;color:var(--sub);line-height:1.5}
-  .row .n{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
-  .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em}
 
   .stars{display:flex;align-items:center;gap:8px;margin-bottom:4px}
   .stars .s{font-size:10px;color:var(--gold);width:44px}
-  .stars .t{flex:1;height:6px;background:var(--well);border-radius:4px;overflow:hidden}
-  .stars .f{height:100%;background:linear-gradient(90deg,var(--gold),var(--amber))}
+  .stars .t{flex:1;height:8px;background:var(--well);border-radius:999px;overflow:hidden}
+  .stars .f{height:100%;background:linear-gradient(90deg,var(--greenTop),var(--green));border-radius:999px}
   .stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
 
-  .book{display:flex;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}
-  .book img,.book .ph{width:38px;height:52px;border-radius:3px;object-fit:cover;flex-shrink:0;
-    background:var(--well);box-shadow:2px 2px 8px -4px rgba(0,0,0,.35)}
-  .book .t{font-family:var(--serif);font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .book{display:flex;gap:9px;padding:13px 0;border-bottom:1px solid var(--line);align-items:center}
+  .book img,.book .ph{width:38px;height:52px;border-radius:7px;object-fit:cover;flex-shrink:0;
+    background:var(--well);box-shadow:0 3px 10px -6px rgba(var(--shadow),.6)}
+  .book .t{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .book .m{font-size:11px;color:var(--sub);margin-top:1px}
-  /* three round buttons on a phone row were eating the title */
-  .book .sm{padding:7px 9px;font-size:11px;flex-shrink:0}
-  .book .w{font-size:11px;color:var(--violet);margin-top:2px}
+  .book .w{font-size:11px;color:var(--violet);margin-top:2px;font-weight:600}
+  .book .sm{padding:7px 10px;font-size:11px;flex-shrink:0}
 
-  .verdict{padding:13px;border-radius:10px;margin-top:12px}
-  .verdict h4{margin:0 0 5px;font-size:13px}
-  .verdict p{margin:0;font-size:12px;color:var(--sub);line-height:1.55}
+  .verdict{padding:14px;border-radius:20px;margin-top:12px}
+  .verdict h4{margin:0 0 5px;font-size:13.5px;font-weight:700}
+  .verdict p{margin:0;font-size:12.5px;color:var(--sub);line-height:1.6}
 
-  /* the report itself reads like a page of a book, not like an app screen */
+  /* the report is a page from a book, so it keeps the serif */
   .sec{margin-bottom:14px}
-  .sec h5{font-size:10px;font-weight:700;color:var(--amber);margin:0 0 5px;letter-spacing:.12em;text-transform:uppercase}
+  .sec h5{font-size:10px;font-weight:700;color:var(--amber);margin:0 0 5px;
+    letter-spacing:.12em;text-transform:uppercase}
   .sec p{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.68;color:var(--ink)}
-
-  /* the finished report: paragraphs, not fields */
   .essay{max-width:62ch}
   .essay p{margin:0 0 .8em;font-family:var(--serif);font-size:16px;line-height:1.78;
     color:var(--ink);text-indent:1.3em}
   .essay p:first-child{text-indent:0}
   .essay p:last-child{margin-bottom:0}
   .essay p:first-child::first-letter{float:left;font-family:var(--serif);font-weight:700;
-    font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:var(--gold)}
+    font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:var(--amber)}
   .head{border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:15px}
   /* the handle on each part of a draft - visible before you touch anything */
-  .pen{flex-shrink:0;font-size:10.5px;font-weight:800;letter-spacing:.03em;
-    color:var(--violet);background:var(--chip2);border-radius:999px;padding:4px 9px;white-space:nowrap}
-  .pen.on{background:var(--violet);color:var(--panel)}
+  .pen{flex-shrink:0;font-size:10.5px;font-weight:700;letter-spacing:.03em;
+    color:var(--violet);background:var(--chip2);border-radius:999px;padding:5px 11px;white-space:nowrap}
+  .pen.on{background:var(--violet);color:#fff}
   .sec.fixable{cursor:pointer;border:1px dashed var(--line)}
 
-  .ans{display:flex;gap:9px;padding:9px 0;border-top:1px solid var(--line)}.ans:first-child{border-top:none}
-  .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}.ans .aa{font-size:12px;margin-top:2px}
-  .note{font-size:11px;color:var(--sub);line-height:1.65;margin:11px 0 0}
+  .ans{display:flex;gap:9px;padding:10px 0;border-top:1px solid var(--line)}
+  .ans:first-child{border-top:none}
+  .ans .qq{font-size:12px;color:var(--sub);line-height:1.45}
+  .ans .aa{font-size:12px;margin-top:2px;font-weight:600}
+  .note{font-size:11.5px;color:var(--sub);line-height:1.68;margin:11px 0 0}
 
-  input{width:100%;padding:11px;border-radius:8px;background:var(--well);border:1px solid var(--line);
-    color:var(--text);font-size:15px;outline:none;font-family:inherit}
+  .det h6{margin:0 0 3px;font-size:13px;font-weight:700;font-family:var(--serif)}
+  .det .row2{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .det .row2:first-of-type{border-top:none}
+  .det .mini{font-size:11px;color:var(--sub);line-height:1.5}
+
+  input{width:100%;padding:13px 15px;border-radius:16px;background:var(--well);
+    border:1px solid var(--line);color:var(--text);font-size:15px;outline:none;
+    font-family:var(--ui);font-weight:500}
   input:focus{border-color:var(--amber)}
   input::placeholder{color:var(--ph)}
   .hide{display:none!important}   /* must beat .cover{display:flex} below */
@@ -192,18 +195,18 @@
      the question on screen would change by itself a moment after it appeared. */
   #veil{position:fixed;inset:0;z-index:40;background:transparent;cursor:progress}
   .cover{display:flex;gap:12px;align-items:center;margin-top:14px}
-  .cover img{width:64px;height:88px;object-fit:cover;border-radius:4px;border:1px solid var(--line);
-    box-shadow:3px 3px 12px -6px rgba(0,0,0,.95)}
+  .cover img{width:64px;height:88px;object-fit:cover;border-radius:10px;border:1px solid var(--line);
+    box-shadow:0 6px 16px -10px rgba(var(--shadow),.7)}
 
   /* --- phone is the default above. Tablet: more room, bigger type, and the
          stat tiles line up in one band instead of stacking two by two. --- */
   @media (min-width:680px){
-    .wrap{max-width:740px;padding:28px 24px 175px}
-    h1{font-size:24px}
+    .wrap{max-width:740px;padding:30px 24px 210px}
+    h1{font-size:26px}
     .tag{font-size:14px;margin-bottom:22px}
-    .box{padding:20px;border-radius:16px}
-    .big{padding:17px;font-size:16px}
-    .opt{font-size:15px;padding:15px 16px}
+    .box{padding:22px;border-radius:30px}
+    .big{padding:18px;font-size:16px}
+    .opt{font-size:15px;padding:16px 18px}
     .q{font-size:21px}
     .sec p{font-size:16.5px}
     .essay p{font-size:17px;line-height:1.8}
@@ -212,27 +215,27 @@
     .stats .row{display:contents}
     .stats .row>div{margin:0}
     .stats>.genres,.stats>.langrow{grid-column:1/-1}
-    .stats .n{font-size:30px!important}
-    .shelf{height:150px;background-size:auto 150px}
+    .stats .n{font-size:32px!important}
+    .shelf{height:190px;background-size:auto 190px}
   }
   /* --- Desktop: a page, not a stretched phone. The column stays a readable
-         measure; the shelf and the lamp do the rest of the width. --- */
+         measure; the village does the rest of the width. --- */
   @media (min-width:1080px){
-    .wrap{max-width:820px;padding:40px 28px 210px}
-    h1{font-size:26px}
+    .wrap{max-width:820px;padding:42px 28px 250px}
+    h1{font-size:28px}
     .essay p{font-size:17.5px}
-    .shelf{height:190px;background-size:auto 190px;opacity:calc(var(--shelfO) * .85)}
+    .shelf{height:230px;background-size:auto 230px}
   }
   /* touch devices get targets you can actually hit with a thumb */
   @media (hover:none){
-    .sm{padding:10px 13px}
-    .lang{padding:9px 13px}
+    .sm{padding:10px 14px}
+    .lang{padding:9px 14px}
     .row>div.tap:hover{border-color:var(--line)}
   }
   /* a phone held sideways has almost no height to spare */
   @media (max-height:520px){
-    .shelf{height:70px;background-size:auto 70px}
-    .wrap{padding-bottom:90px}
+    .shelf{height:80px;background-size:auto 80px}
+    .wrap{padding-bottom:100px}
   }
 </style>
 </head>
@@ -364,9 +367,9 @@
   // day or night - remembered per device, like the rest of the setup
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
-    $("themeBtn").textContent = t === "day" ? "\u263c" : "\u263e";
+    $("themeBtn").textContent = t === "day" ? "\u2600\ufe0f" : "\U0001f319";
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", t === "day" ? "#EFE6D4" : "#15110D");
+    if (m) m.setAttribute("content", t === "day" ? "#F4FAFE" : "#0E2436");
   }
 
   function P() {
@@ -1264,7 +1267,7 @@
     var paras = ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
       .map(function (k) { return r[k]; }).filter(Boolean)
       .map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}p{margin:0 0 .8em;font-size:15.5px;text-indent:1.3em}p:first-of-type{text-indent:0}p:first-of-type::first-letter{float:left;font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:#b8860b;font-weight:700}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(b.title) + '</title><style>body{font-family:Georgia,serif;max-width:640px;margin:40px auto;padding:0 24px;line-height:1.65;color:#222}h1{font-size:24px;margin:0 0 4px}.meta{color:#777;font-size:13px;margin-bottom:24px}p{margin:0 0 .8em;font-size:15.5px;text-indent:1.3em}p:first-of-type{text-indent:0}p:first-of-type::first-letter{float:left;font-size:3.1em;line-height:.84;margin:.06em .08em 0 0;color:#1E7BC8;font-weight:700}.foot{margin-top:32px;font-size:12px;color:#999;border-top:1px solid #ddd;padding-top:10px}</style></head><body><h1>' + esc(b.title) + '</h1><div class="meta">' + (b.author ? esc(b.author) + " &middot; " : "") + 'Read by ' + esc(bookReader(b)) + ' &middot; Finished ' + esc(b.date) + ' &middot; ' + "★".repeat(st) + "☆".repeat(5 - st) + '</div>' +
       paras +
       '<div class="foot">Quiz &mdash; same as the AI: ' + b.aiWins + ', read it differently: ' + b.henryWins + ' &middot; written in Book Lab</div></body></html>');
     w.document.close(); setTimeout(function () { w.print(); }, 400);

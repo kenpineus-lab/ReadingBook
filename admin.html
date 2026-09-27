@@ -3,42 +3,53 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#F7FAFC" />
+<meta name="theme-color" content="#F4FAFE" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Gowun+Dodum&display=swap" />
 <title>Book Lab — 운영자</title>
 <style>
+  /* same island as the app: whitewash, cobalt, one sun */
   :root{
-    --bg:#F7FAFC; --panel:#FFFFFF; --line:#E6EEF4; --text:#26343E; --sub:#7C8D9A;
-    --sky:#4FB6E8; --skyTop:#72C9F0; --sea:#41C7A6; --sun:#FFC24D; --red:#FF7C8A;
-    --peri:#8C8DF0; --well:#F6FAFD; --chip:#EEF4F9; --on:#06293A;
+    --bg:#F4FAFE; --panel:#FFFFFF; --line:#DCEAF5; --text:#1E3D58; --sub:#7B97AD;
+    --sky:#1E7BC8; --skyTop:#3E95DD; --sea:#0E9384; --sun:#F0B429; --red:#E1776B;
+    --peri:#C9578E; --well:#F5FAFE; --chip:#EAF3FB; --on:#FFFFFF;
+    --ui:'Quicksand','Gowun Dodum',system-ui,-apple-system,'Segoe UI',sans-serif;
     --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#fff 0%,var(--bg) 40%,#EDF3F8 100%);
-    background-attachment:fixed;min-height:100vh;color:var(--text);
-    font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
-  .wrap{max-width:720px;margin:0 auto;padding:24px 16px 80px}
-  h1{font-family:var(--serif);font-size:22px;letter-spacing:.1em;color:#3FA8DC;margin:0 0 2px}
-  .tag{font-family:var(--serif);font-style:italic;font-size:13px;color:#8FA0AC;
+  body{margin:0;min-height:100vh;color:var(--text);font-family:var(--ui);font-weight:500;
+    background:
+      radial-gradient(120% 60% at 50% -12%, rgba(120,190,235,.20) 0%, transparent 74%),
+      linear-gradient(180deg,#fff 0%,var(--bg) 44%,#E6F2FA 100%);
+    background-attachment:fixed}
+  body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:150px;pointer-events:none;z-index:0;
+    background:url(assets/skyline.svg) repeat-x bottom center;background-size:auto 150px;opacity:.95;
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 42%);mask-image:linear-gradient(180deg,transparent,#000 42%)}
+  .wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:24px 16px 190px}
+  h1{font-size:23px;font-weight:700;letter-spacing:.13em;color:var(--sky);margin:0 0 2px}
+  .tag{font-size:13px;color:var(--sub);
     margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-  .box{background:#fff;border:1px solid #EAF1F6;border-radius:20px;padding:18px;margin-bottom:14px;
-    box-shadow:0 2px 5px -3px rgba(40,70,92,.09),0 14px 30px -22px rgba(40,70,92,.28)}
+  .box{background:#fff;border:1px solid var(--line);border-radius:26px;padding:19px;margin-bottom:13px;
+    box-shadow:0 2px 6px -4px rgba(26,74,110,.14),0 18px 36px -26px rgba(26,74,110,.40)}
   .lbl{font-size:10px;letter-spacing:.14em;color:var(--sub);font-weight:700;text-transform:uppercase;margin-bottom:12px}
   label{display:block;font-size:11px;color:var(--sub);margin:12px 0 5px}
-  input{width:100%;padding:12px;border-radius:12px;background:var(--well);border:1px solid var(--line);
+  input{width:100%;padding:13px 15px;border-radius:16px;background:var(--well);border:1px solid var(--line);
     color:var(--text);font-size:15px;outline:none;font-family:inherit}
   input:focus{border-color:var(--sky)}
-  .btn{border:none;border-radius:15px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;
-    font-family:inherit;width:100%;transition:transform .08s}
+  .btn{border:none;border-radius:999px;padding:16px;font-size:15.5px;font-weight:700;cursor:pointer;
+    font-family:var(--ui);width:100%;transition:transform .09s}
   .btn:active{transform:scale(.985)}
   .sky{background:linear-gradient(180deg,var(--skyTop),var(--sky));color:var(--on)}
   .ghost{background:var(--chip);color:var(--text)}
   .sm{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:999px;
-    padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+    padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ui)}
   .sm:hover{border-color:var(--sub)}
   .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
   .hh{border-top:1px solid var(--line);padding:14px 0}
   .hh:first-of-type{border-top:none}
-  .hh h3{margin:0;font-size:16px;font-family:var(--serif)}
+  .hh h3{margin:0;font-size:16.5px;font-weight:700}
   .meta{font-size:12px;color:var(--sub);margin-top:3px}
   .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;
     padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--sub);margin-left:7px}
@@ -46,10 +57,11 @@
   .note{font-size:11.5px;color:var(--sub);line-height:1.65;margin:10px 0 0}
   .bad{color:var(--red)}
   .ok{color:#1E9E7E}
-  .invite{background:var(--well);border:1px dashed var(--sky);border-radius:14px;
+  .invite{background:var(--well);border:1px dashed var(--sky);border-radius:20px;
     padding:14px;margin-top:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
-  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;
-    letter-spacing:.06em;color:var(--on)}
+  /* --on is white now (it sits on the cobalt button); the code sits on paper */
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:700;
+    letter-spacing:.06em;color:var(--sky)}
   .hide{display:none!important}
   .spin{width:15px;height:15px;border:2px solid var(--sky);border-top-color:transparent;
     border-radius:50%;animation:s 1s linear infinite;display:inline-block;vertical-align:-2px}
