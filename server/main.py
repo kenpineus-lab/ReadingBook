@@ -14,7 +14,7 @@ Env vars (set in Railway):
   GITHUB_REPO         optional — e.g. kenpineus-lab/henry-reading-backup
   DB_PATH             optional — default /data/booklab.db (mount a Railway volume at /data)
 """
-import os, json, sqlite3, base64, asyncio, datetime
+import os, io, json, sqlite3, base64, asyncio, datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,6 +46,46 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS books (
 
 
 ICON_MAX = 12          # a couple of emoji, including any variation selectors
+COVER_MAX = 1024       # longest edge kept for the full cover
+THUMB_MAX = 160        # what a library row actually draws (38x52 css px, retina)
+
+
+def _resize(data_url: str, longest: int, quality: int) -> str | None:
+    """Re-encode a data: URL down to `longest` px. None if it isn't a usable image."""
+    try:
+        from PIL import Image
+    except Exception:
+        return None
+    if not data_url or "," not in data_url:
+        return None
+    try:
+        raw = base64.b64decode(data_url.split(",", 1)[1])
+        im = Image.open(io.BytesIO(raw))
+        im.load()
+        if im.mode not in ("RGB", "L"):
+            im = im.convert("RGB")
+        w, h = im.size
+        k = min(1.0, longest / float(max(w, h)))
+        if k < 1.0:
+            im = im.resize((max(1, int(w * k)), max(1, int(h * k))), Image.LANCZOS)
+        out = io.BytesIO()
+        im.save(out, "JPEG", quality=quality, optimize=True)
+        return "data:image/jpeg;base64," + base64.b64encode(out.getvalue()).decode("ascii")
+    except Exception:
+        return None
+
+
+def _normalise_images(d: dict) -> dict:
+    """A saved book keeps a reasonable cover and a tiny thumbnail. The list
+    endpoint sends only the thumbnail - the full cover is never in a list."""
+    cov = d.get("cover")
+    if not cov:
+        return d
+    smaller = _resize(cov, COVER_MAX, 82)
+    if smaller and len(smaller) < len(cov):
+        d["cover"] = smaller
+    d["thumb"] = _resize(d["cover"], THUMB_MAX, 72) or d.get("thumb")
+    return d
 
 
 def _ensure_settings(con):
@@ -105,6 +145,7 @@ async def backup_to_github():
     for r in rows:
         d = json.loads(r["data"])
         d.pop("cover", None)  # keep the backup small; covers stay in the DB
+        d.pop("thumb", None)
         d["profile"] = r["profile"]
         payload.append(d)
     body = json.dumps({"exported": datetime.datetime.utcnow().isoformat() + "Z", "count": len(payload), "books": payload}, ensure_ascii=False, indent=2)
@@ -129,6 +170,35 @@ async def backup_to_github():
     return {"ok": True, "count": len(payload)}
 
 
+def _compact_covers_sync():
+    """The covers saved before the phone-side shrink are 1-9MB each, which made
+    switching profiles a 50MB download. Rewrite them once, in the background."""
+    con = db()
+    if con.execute("SELECT v FROM settings WHERE k='covers_compacted'").fetchone():
+        return "already done"
+    rows = con.execute("SELECT profile, id, data FROM books").fetchall()
+    done = saved = 0
+    for r in rows:
+        try:
+            d = json.loads(r["data"])
+        except Exception:
+            continue
+        before = len(r["data"])
+        if not d.get("cover"):
+            continue
+        d = _normalise_images(d)
+        blob = json.dumps(d, ensure_ascii=False)
+        if len(blob) < before:
+            con.execute("UPDATE books SET cover=?, data=? WHERE profile=? AND id=?",
+                        (d.get("cover"), blob, r["profile"], r["id"]))
+            done += 1
+            saved += before - len(blob)
+    con.execute("INSERT OR REPLACE INTO settings (k, v) VALUES ('covers_compacted', ?)",
+                (datetime.datetime.utcnow().isoformat(),))
+    con.commit()
+    return "compacted %d covers, %.1f MB saved" % (done, saved / 1048576.0)
+
+
 async def daily_backup_loop():
     while True:
         await asyncio.sleep(24 * 3600)
@@ -141,9 +211,12 @@ async def daily_backup_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db()
+    # off the event loop: decoding a dozen multi-megabyte JPEGs takes a moment
+    compact = asyncio.create_task(asyncio.to_thread(_compact_covers_sync))
     task = asyncio.create_task(daily_backup_loop())
     yield
     task.cancel()
+    compact.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -208,8 +281,23 @@ def list_books(profile: str | None = None, x_family_code: str | None = Header(de
     for r in rows:
         d = json.loads(r["data"])
         d["profile"] = r["profile"]    # authoritative, even for rows saved before profiles existed
+        # A library row draws a 38x52 thumbnail. Sending the full photo for that
+        # turned a profile switch into a 50MB download.
+        d["has_cover"] = bool(d.get("cover"))
+        d.pop("cover", None)
         out.append(d)
     return out
+
+
+@app.get("/books/{book_id}/cover")
+def book_cover(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None)):
+    """The full photo, only when something actually wants to show it."""
+    check(x_family_code)
+    con = db()
+    r = con.execute("SELECT data FROM books WHERE profile=? AND id=?", (prof(profile), book_id)).fetchone()
+    if not r:
+        raise HTTPException(404, "no such book")
+    return {"cover": json.loads(r["data"]).get("cover")}
 
 
 class Book(BaseModel):
@@ -227,6 +315,7 @@ class Book(BaseModel):
     answers: list = []
     follow: list = []
     report: dict | None = None
+    thumb: str | None = None  # small copy for lists; derived on save, never uploaded
     edits: list = []          # every AI rewrite the reader asked for, with before/after
     report0: dict | None = None   # the AI's untouched first draft; never overwritten once set
     updatedAt: str | None = None  # set when a saved report is revised later
@@ -240,10 +329,11 @@ def save_book(b: Book, x_family_code: str | None = Header(default=None)):
     p = prof(b.profile)
     d = b.model_dump()
     d["profile"] = p
+    d = _normalise_images(d)
     con = db()
     con.execute(
         "INSERT OR REPLACE INTO books (profile, id, title, author, date, cover, data, created_at) VALUES (?,?,?,?,?,?,?,?)",
-        (p, b.id, b.title, b.author or "", b.date, b.cover, json.dumps(d, ensure_ascii=False), datetime.datetime.utcnow().isoformat()),
+        (p, b.id, b.title, b.author or "", b.date, d.get("cover"), json.dumps(d, ensure_ascii=False), datetime.datetime.utcnow().isoformat()),
     )
     con.commit()
     return {"ok": True, "profile": p}
@@ -303,4 +393,6 @@ def health():
     counts = {p: 0 for p in PROFILES}
     for r in con.execute("SELECT profile, COUNT(*) AS c FROM books GROUP BY profile"):
         counts[r["profile"]] = r["c"]
-    return {"ok": True, "books": n, "profiles": counts, "backup": bool(GH_TOKEN and GH_REPO)}
+    compacted = con.execute("SELECT v FROM settings WHERE k='covers_compacted'").fetchone()
+    return {"ok": True, "books": n, "profiles": counts, "backup": bool(GH_TOKEN and GH_REPO),
+            "covers_compacted": compacted["v"] if compacted else False}

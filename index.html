@@ -577,7 +577,7 @@
       lst.innerHTML = '<div class="lbl">' + (isFamily() ? "EVERY BOOK THIS FAMILY HAS FINISHED" : "BOOKS YOU\'VE FINISHED") + ' · ' + S.books.length + '</div>';
       S.books.forEach(function (x) {
         var r = el("div", "book");
-        r.innerHTML = (x.cover ? '<img src="' + x.cover + '" alt=""/>' : '<div class="ph"></div>') +
+        r.innerHTML = (x.thumb ? '<img src="' + x.thumb + '" alt=""/>' : '<div class="ph"></div>') +
           '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (isFamily() ? who(x.profile).icon + ' ' + esc(who(x.profile).name) + ' · ' : '') + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
         var eb = el("button", "sm", "✎"); eb.style.color = "var(--violet)"; eb.title = "Revise this report";
@@ -594,7 +594,7 @@
 
   function bookLine(x) {
     var r = el("div", "row2");
-    r.innerHTML = (x.cover ? '<img src="' + x.cover + '" style="width:30px;height:41px;object-fit:cover;border-radius:3px;flex-shrink:0" alt=""/>' : '') +
+    r.innerHTML = (x.thumb ? '<img src="' + x.thumb + '" style="width:30px;height:41px;object-fit:cover;border-radius:3px;flex-shrink:0" alt=""/>' : '') +
       '<div style="flex:1;min-width:0"><h6>' + esc(x.title) + '</h6>' +
       '<div class="mini">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div></div>';
     var b = el("button", "sm", (isFamily() ? who(x.profile).icon + " " : "") + "Report"); b.style.cssText = "color:var(--amber);align-self:center";
@@ -984,7 +984,7 @@
       var entry = {
         id: S.editingId || Date.now(),
         profile: base ? (base.profile || "henry") : P(),
-        title: S.title, author: S.author, cover: S.cover,
+        title: S.title, author: S.author, cover: S.cover, thumb: S.thumb || null,
         date: base ? base.date : new Date().toISOString().slice(0, 10),
         lang: L(), genre: S.genre || "other", kind: S.kind || "fiction",
         audience: S.audience || "me", order: S.order || [],
@@ -1008,7 +1008,7 @@
     S.editingId = b.id;
     S.editBase = b;
     S.asProfile = b.profile || "henry";        // voice and level follow the owner, not the viewer
-    S.title = b.title; S.author = b.author || ""; S.cover = b.cover || null;
+    S.title = b.title; S.author = b.author || ""; S.cover = b.cover || null; S.thumb = b.thumb || null;
     S.lang = b.lang === "ko" ? "ko" : "en";
     S.genre = b.genre || "other"; S.kind = b.kind || "fiction";
     S.audience = b.audience || "me";
@@ -1033,7 +1033,7 @@
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
     var box = el("div", "box");
-    box.innerHTML = '<div class="head" style="display:flex;gap:13px">' + (b.cover ? '<img src="' + b.cover + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
+    box.innerHTML = '<div class="head" style="display:flex;gap:13px">' + ((b.thumb || b.cover) ? '<img src="' + (b.thumb || b.cover) + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
       '<div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--sub);letter-spacing:.12em">BOOK REPORT</div><div style="font-size:17px;font-weight:900;line-height:1.25;margin-top:3px">' + esc(b.title) + '</div>' +
       (b.author ? '<div style="font-size:12px;color:var(--sub)">' + esc(b.author) + '</div>' : '') + '<div style="font-size:11px;color:var(--sub);margin-top:5px">Finished ' + esc(b.date) + '</div><div style="font-size:15px;color:var(--gold);margin-top:3px">' + stars(r.stars) + '</div></div></div>' +
       '<div class="essay">' +
