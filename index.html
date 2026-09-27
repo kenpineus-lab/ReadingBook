@@ -147,7 +147,7 @@
      fills up reads as yours in a way a counter never does - and because at
      noon on the caldera you cannot see stars. */
   .skybox{position:relative;border:none;overflow:hidden;padding:18px 18px 15px;
-    background:radial-gradient(120% 90% at 50% 0%, #21547F 0%, #143656 45%, #0D2740 100%);
+    background:radial-gradient(130% 100% at 72% 6%, #2F5E8E 0%, #1C4169 38%, #122C4B 70%, #0B1F38 100%);
     box-shadow:0 2px 6px -4px rgba(var(--shadow),.2), 0 20px 40px -26px rgba(12,40,66,.75)}
   .skybox svg{display:block;width:100%;height:auto}
   .skybox .cap{display:flex;align-items:baseline;gap:8px;margin-top:12px;color:#CFE4F4}
@@ -155,7 +155,9 @@
   .skybox .cap span{font-size:11.5px;opacity:.75}
   .skybox .note{color:#A8C6DE;margin-top:6px}
   .star{cursor:pointer}
-  .star:hover .sp{filter:brightness(1.25)}
+  .star .sp{transition:transform .14s}
+  .star[data-i]:hover .sp{transform:scale(1.12);transform-box:fill-box;transform-origin:center}
+  .star[data-i]:active .sp{transform:scale(.94);transform-box:fill-box;transform-origin:center}
   .langrow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
   .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:999px;
     padding:7px 13px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:var(--ui);font-weight:700}
@@ -864,10 +866,11 @@
       st.innerHTML =
         '<div class="row" style="margin-bottom:10px">' +
           '<div class="tap' + (S.stat === "books" ? " on" : "") + '" data-stat="books" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--gold)">' + S.books.length + '</div><div class="l" style="font-size:11px;margin-top:6px">BOOKS READ</div></div>' +
-          '<div class="tap' + (S.stat === "month" ? " on" : "") + '" data-stat="month" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + month + '</div><div class="l" style="font-size:11px;margin-top:6px">THIS MONTH</div></div>' +
+          // "this month" is the sky above; a tile repeating the same number is
+          // the duplication this app keeps having to be saved from
+          '<div class="tap' + (S.stat === "streak" ? " on" : "") + '" data-stat="streak" style="padding:16px 8px"><div class="n" style="font-size:44px;color:var(--green)">' + streak + '</div><div class="l" style="font-size:11px;margin-top:6px">WEEKS IN A ROW</div></div>' +
         '</div>' +
         '<div class="row">' +
-          '<div class="tap' + (S.stat === "streak" ? " on" : "") + '" data-stat="streak"><div class="n" style="color:var(--amber)">' + streak + '</div><div class="l">WEEKS IN A ROW</div></div>' +
           '<div class="tap' + (S.stat === "diff" ? " on" : "") + '" data-stat="diff"><div class="n" style="color:var(--violet)">' + w + '<span style="font-size:13px;color:var(--sub)">/' + (w + aw) + '</span></div><div class="l">SAW IT YOUR OWN WAY</div></div>' +
         '</div>' +
         (genres.length ? '<div class="genres"><div style="font-size:10px;color:var(--sub);margin:4px 0 8px">WHAT YOU LIKE TO READ</div>' +
@@ -932,12 +935,28 @@
 
   // Twelve is a month's sky. Each finished book lights one, in the order they
   // were read; the rest wait as outlines.
+  //
+  // Everything here is drawn rather than assembled out of glyphs: plump
+  // five-point stars (a thick round-joined stroke in the fill colour is what
+  // makes a star chubby instead of spiky), a moon that is asleep because it is
+  // night, and the village from the rest of the app dozing underneath.
   var SKY_MAX = 12;
-  var SKY_POS = [[9, 31, 3.4], [18, 13, 2.6], [27, 39, 2.9], [35, 21, 3.6],
-                 [44, 10, 2.5], [50, 34, 3.2], [59, 19, 2.8], [67, 41, 3.5],
-                 [74, 12, 2.6], [82, 30, 3.1], [90, 17, 2.7], [96, 40, 2.4]];
+  var SKY_POS = [[8, 31, 3.3], [17, 16, 2.7], [26, 37, 3.0], [34, 21, 3.5],
+                 [43, 12, 2.6], [48, 34, 3.1], [57, 20, 2.9], [64, 39, 3.3],
+                 [70, 14, 2.6], [76, 30, 3.0], [84, 39, 2.7], [92, 28, 2.5]];
+  // one colour per star, cycling: a sky of identical gold is tidy, not playful
+  var SKY_HUE = ["#FFD469", "#FFB6A2", "#9FE3D4", "#C6B8F7", "#9AD5FF", "#FFC978"];
 
-  function sparkle(cx, cy, r) {
+  function starPath(cx, cy, r) {
+    var pts = [];
+    for (var i = 0; i < 10; i++) {
+      var a = (-90 + i * 36) * Math.PI / 180, rr = (i % 2 ? r * 0.47 : r);
+      pts.push((cx + Math.cos(a) * rr).toFixed(2) + " " + (cy + Math.sin(a) * rr).toFixed(2));
+    }
+    return "M" + pts.join("L") + "Z";
+  }
+
+  function twinkle(cx, cy, r) {
     return "M" + cx + " " + (cy - r) + "Q" + cx + " " + cy + " " + (cx + r) + " " + cy +
            "Q" + cx + " " + cy + " " + cx + " " + (cy + r) +
            "Q" + cx + " " + cy + " " + (cx - r) + " " + cy +
@@ -951,25 +970,79 @@
     var lit = Math.min(mine.length, SKY_MAX), over = Math.max(0, mine.length - SKY_MAX);
     var box = el("div", "box skybox");
 
-    var svg = '<svg viewBox="0 0 100 52" role="img" aria-label="' +
+    var svg = '<svg viewBox="0 0 100 58" role="img" aria-label="' +
       T(lit + " of " + SKY_MAX + " stars", SKY_MAX + "개 중 " + lit + "개") + '">' +
-      '<defs><radialGradient id="g"><stop offset="0" stop-color="#F7D278" stop-opacity=".42"/>' +
-      '<stop offset=".45" stop-color="#F7D278" stop-opacity=".13"/>' +
-      '<stop offset="1" stop-color="#F7D278" stop-opacity="0"/></radialGradient></defs>' +
-      // a couple of brush strokes, so the sky moves
-      // long slow currents rather than spirals: at this size a spiral renders as
-      // a hook, and reads as a scribble
-      '<g fill="none" stroke="#6FA6D6" stroke-linecap="round">' +
-        '<path d="M-2 26q13-9 26-3t26-4 26 3 26-5" stroke-width="1.3" stroke-opacity=".17"/>' +
-        '<path d="M-2 38q15-7 29-1t27-6 28 2" stroke-width="1.05" stroke-opacity=".12"/>' +
-        '<path d="M-2 14q12-6 24-1t26-4 28 3" stroke-width="1" stroke-opacity=".10"/></g>';
+      '<defs>' +
+        '<radialGradient id="glow"><stop offset="0" stop-color="#FFE9A8" stop-opacity=".5"/>' +
+          '<stop offset=".5" stop-color="#FFD469" stop-opacity=".14"/>' +
+          '<stop offset="1" stop-color="#FFD469" stop-opacity="0"/></radialGradient>' +
+        '<radialGradient id="mglow"><stop offset="0" stop-color="#FFF0C4" stop-opacity=".40"/>' +
+          '<stop offset=".55" stop-color="#FFF0C4" stop-opacity=".10"/>' +
+          '<stop offset="1" stop-color="#FFF0C4" stop-opacity="0"/></radialGradient>' +
+        '<mask id="moon"><circle cx="87" cy="14" r="7" fill="#fff"/>' +
+          '<circle cx="90.6" cy="10.4" r="6.1" fill="#000"/></mask>' +
+      '</defs>';
 
+    // slow currents, so the sky is moving rather than sprinkled
+    svg += '<g fill="none" stroke="#7FB4DF" stroke-linecap="round">' +
+      '<path d="M-2 25q13-8 26-3t26-4 26 3 26-5" stroke-width="1.2" stroke-opacity=".14"/>' +
+      '<path d="M-2 36q15-6 29-1t27-5 28 2" stroke-width="1" stroke-opacity=".10"/></g>';
+
+    // clouds: three soft puffs, low and out of the way
+    svg += '<g fill="#8FB8DC" opacity=".17">' +
+      '<g><ellipse cx="15" cy="42" rx="7" ry="3"/><circle cx="12" cy="40.6" r="2.7"/><circle cx="17" cy="40.2" r="3.3"/></g>' +
+      '<g opacity=".8"><ellipse cx="58" cy="44.5" rx="6" ry="2.5"/><circle cx="56" cy="43.3" r="2.3"/><circle cx="60" cy="43" r="2.8"/></g>' +
+      '</g>';
+
+    // A sleepy moon. Built with a mask rather than two arcs: getting a crescent
+    // out of arc sweep flags is easy to get subtly wrong, and it renders as a
+    // pale blob when you do.
+    svg += '<g><circle cx="87" cy="14" r="13" fill="url(#mglow)"/>' +
+      '<circle cx="87" cy="14" r="7" fill="#FFE49B" mask="url(#moon)"/>' +
+      '<g stroke="#BE8C3E" stroke-width=".6" stroke-linecap="round" fill="none" opacity=".8">' +
+        '<path d="M83.3 14.6q.75-.85 1.5 0"/><path d="M86.4 15.6q.75-.85 1.5 0"/>' +
+        '<path d="M84.3 17.4q.9.85 1.8-.15"/></g>' +
+      '<g fill="#F2A98F" opacity=".45">' +
+        '<ellipse cx="82.5" cy="16.3" rx=".85" ry=".55"/>' +
+        '<ellipse cx="88.2" cy="17.3" rx=".85" ry=".55"/></g>' +
+      // a few zzz, because it is asleep
+      '<g fill="#FFE49B" opacity=".5" font-family="var(--ui)" font-weight="700">' +
+        '<text x="93.5" y="7.6" font-size="3.4">z</text>' +
+        '<text x="96.3" y="4.6" font-size="2.4">z</text></g></g>';
+
+    // the village, asleep at the foot of its own sky - one silhouette with its
+    // domes on top, not a row of blocks sitting on a bar
+    svg += '<g fill="#0A1E33" opacity=".62">' +
+      '<path d="M0 58V50h5v-4h7v4h4v-3.5h8V50h6v-5h7v5h5v-3h9v3h4v-4.5h8V50h5v-3h8v3h4v-4h7v4h6v-2.5h7V50h5v8Z"/>' +
+      '<path d="M12 46a3.5 3.5 0 0 1 7 0z" transform="translate(-3.5 0)"/>' +
+      '<path d="M37 45a3.5 3.5 0 0 1 7 0z" transform="translate(-4 0)"/>' +
+      '<path d="M62 45.5a4 4 0 0 1 8 0z" transform="translate(-4 0)"/>' +
+      '<path d="M88 47.5a3 3 0 0 1 6 0z" transform="translate(-3 0)"/></g>' +
+      // a few windows still awake
+      '<g fill="#FFD469" opacity=".45">' +
+        '<rect x="6.6" y="47.6" width="1.5" height="1.8" rx=".4"/>' +
+        '<rect x="24.4" y="47" width="1.5" height="1.8" rx=".4"/>' +
+        '<rect x="48.3" y="46.4" width="1.5" height="1.8" rx=".4"/>' +
+        '<rect x="74.6" y="47.4" width="1.5" height="1.8" rx=".4"/></g>';
+
+    // decorative twinkles - small, clearly not one of the twelve
+    svg += '<g fill="#DCEBF8" opacity=".5">' +
+      '<path d="' + twinkle(12, 9, 1.1) + '"/><path d="' + twinkle(63, 8, .9) + '"/>' +
+      '<path d="' + twinkle(30, 8, .75) + '"/><path d="' + twinkle(96, 40, 1) + '"/>' +
+      '<path d="' + twinkle(4, 41, .85) + '"/></g>';
+
+    // and the twelve themselves
     SKY_POS.forEach(function (pt, i) {
-      var on = i < lit, b = mine[i];
+      var on = i < lit, b = mine[i], hue = SKY_HUE[i % SKY_HUE.length];
       svg += '<g class="star"' + (on ? ' data-i="' + i + '"' : '') + '>';
-      if (on) svg += '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="' + (pt[2] * 2.1) + '" fill="url(#g)"/>';
-      svg += '<path class="sp" d="' + sparkle(pt[0], pt[1], on ? pt[2] : pt[2] * 0.62) + '" fill="' +
-        (on ? "#F7D278" : "#8FB6D6") + '" opacity="' + (on ? 1 : .22) + '"/>';
+      if (on) svg += '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="' + (pt[2] * 2.3) + '" fill="url(#glow)"/>';
+      // the thick round-joined stroke is what makes it plump instead of spiky
+      svg += '<path class="sp" d="' + starPath(pt[0], pt[1], on ? pt[2] : pt[2] * 0.8) + '" ' +
+        'fill="' + (on ? hue : "none") + '" stroke="' + (on ? hue : "#9FC2DE") + '" ' +
+        'stroke-width="' + (on ? pt[2] * 0.42 : 0.7) + '" stroke-linejoin="round" stroke-linecap="round" ' +
+        'opacity="' + (on ? 1 : .3) + '"/>';
+      if (on) svg += '<circle cx="' + (pt[0] - pt[2] * .28) + '" cy="' + (pt[1] - pt[2] * .34) +
+        '" r="' + (pt[2] * .22) + '" fill="#FFFFFF" opacity=".55"/>';
       if (on && b) svg += '<title>' + esc(b.title) + '</title>';
       svg += '</g>';
     });
@@ -979,7 +1052,7 @@
                "August", "September", "October", "November", "December"];
     var mn = new Date().getMonth();
     box.innerHTML = svg +
-      '<div class="cap"><b>' + lit + '</b><span> / ' + SKY_MAX + ' \u00b7 ' +
+      '<div class="cap"><b>' + lit + '</b><span>\u2009/ ' + SKY_MAX + ' \u00b7 ' +
         T(MON[mn], (mn + 1) + "\uc6d4") + '</span></div>' +
       '<p class="note" style="margin:0">' +
         (over ? T("The sky is full, and " + over + " more besides.", "하늘이 가득 찼어요. 게다가 " + over + "권 더!")
