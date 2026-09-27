@@ -23,6 +23,28 @@ server/requirements.txt, Procfile, railway.json
 README.md             deploy guide (Korean)
 ```
 
+## Households — the tenant boundary
+
+The database holds many families. A **household** owns its readers, their books, its
+settings and its own join code; `house(code)` resolves the `x-family-code` header to one
+and **every** endpoint scopes its queries by that `hh`. There is no way to read a row
+without belonging to it — check any new query has `hh=?` in its WHERE clause.
+
+- Codes are stored as `sha256(salt + ":" + code)` with a per-install salt in `settings(hh=0)`.
+  Never store or log a code in the clear.
+- Households are created by the operator only (`POST /households`, `X-Admin-Code`).
+  Self-serve signup is a different product with a different set of problems.
+- `AI_DAILY_CAP` per household. One shared code per family means one family can only cost
+  the operator so much in a day — without it, handing a friend a code hands them the
+  credit card.
+- Backup defaults **off** for new households: another family's child's writing does not
+  belong in the operator's GitHub repo by default.
+- `settings` rows with `hh=0` are server-global (`_global`/`_set_global`); everything else
+  belongs to a household.
+- The v3→v4 migration turns the original single-family database into household 1, carrying
+  books, chosen icons and the `FAMILY_CODE`. It renames the old tables aside first and runs
+  once; `GET /` reports `migrated_v4`.
+
 ## Profiles
 
 Four shelves: `henry`, `jeremy`, `rebecca`, `han`, plus `all` — the Family shelf,
@@ -31,7 +53,8 @@ writing or deleting with `profile=all` is a 400. The capture button is hidden th
 because a book always belongs to whoever read it. `isFamily()` guards the UI; deletes
 from that view target the owner's shelf, not `all`. `bl:profile` in `localStorage` picks
 one per device; every `/books` call is scoped by it, so books and stats never mix.
-`PROFILES` in `index.html` is the single source of truth — id, display name, icon, and
+`PROFILES` in `index.html` is now **loaded from `GET /me`**, not written in the page —
+id, display name, icon, and
 `level` (the reading level the AI prompts are written for: Henry 3rd grade, Jeremy 8th
 grade, Rebecca and Han adults). `level` is not decoration — it sets how hard the quiz
 questions come back and how the report is written, so keep it accurate as the kids grow.
@@ -43,8 +66,9 @@ sets how it *sounds*. Rebecca and Han get adult prose (평서체 in Korean); the
 child's register. Every prompt that used to hard-code "like a kid" now calls `voice()` —
 if you add a prompt, call it there too or an adult will get a third-grader's sentences.
 
-**Icons** are per person and live on the server (`GET/POST /profiles`, a `settings` table
-keyed `icon:<profile>`), so a choice made on the tablet shows up on the laptop. The picker
+**Readers are data.** `personPanel()` adds, renames, re-levels and removes them
+(`POST /members`, `DELETE /members/{id}`); a reader with books cannot be deleted. Icons live
+on the member row, so a choice made on the tablet shows up on the laptop. The picker
 is a fixed grid of 40 (`ICONS`) — faces first, then things — tapping only, because opening the
 emoji keyboard would put a text field on the one screen designed to need none. `who(id)` layers the chosen icon over
 the default, so everything that renders a profile picks it up for free. The server's `PROFILES`

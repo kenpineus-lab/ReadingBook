@@ -35,7 +35,9 @@ git push
    | 변수 | 값 |
    |---|---|
    | `ANTHROPIC_API_KEY` | Anthropic 콘솔에서 발급한 키 |
-   | `FAMILY_CODE` | 가족만 아는 짧은 코드 (예: `hank2026`) — 화면 접속 시 한 번 입력 |
+   | `FAMILY_CODE` | 우리 가족 코드 (예: `hank2026`) — 최초 1회, 기존 데이터를 첫 가구로 옮길 때만 쓰임 |
+   | `ADMIN_CODE` | **운영자 코드**. 새 가구를 만들 때 `X-Admin-Code` 헤더로 사용. 없으면 새 가구를 만들 수 없음 |
+   | `AI_DAILY_CAP` | 선택 — 가구당 하루 AI 호출 상한 (기본 300) |
    | `ALLOWED_ORIGIN` | `https://kenpineus-lab.github.io` |
    | `DB_PATH` | `/data/booklab.db` |
 
@@ -43,6 +45,20 @@ git push
    이게 없으면 재배포할 때 DB가 사라집니다. 반드시 붙이세요.
 4. **Settings → Networking → Generate Domain** → 주소 복사 (예: `https://booklab-production.up.railway.app`)
 5. 브라우저로 그 주소를 열어 `{"ok":true,"books":0,...}`가 뜨면 성공
+
+## 1-b. 다른 가족에게 코드 발급하기
+
+이 서버는 **가구(household)** 단위로 데이터가 완전히 분리됩니다. 새 가족은 운영자가 만들어 줍니다.
+
+```bash
+curl -X POST https://<서버주소>/households   -H "x-admin-code: <ADMIN_CODE>" -H "content-type: application/json"   -d '{"name":"지영이네","code":"JIYOUNG2026",
+       "members":[{"name":"지영","icon":"🌿","level":"an adult reader","is_adult":true}]}'
+```
+
+- 그 집은 `JIYOUNG2026`만 입력하면 **자기 책장만** 보입니다. 우리 집 책은 보이지 않습니다.
+- 읽는 사람은 앱 안에서 직접 추가·수정할 수 있으므로 `members`는 비워 보내도 됩니다.
+- 현황 보기: `curl https://<서버주소>/households -H "x-admin-code: <ADMIN_CODE>"`
+- **백업은 기본 꺼짐**입니다. 남의 집 아이 글이 우리 깃헙 저장소에 들어가지 않게 하려는 기본값입니다.
 
 ## 2. 깃헙 백업 (선택이지만 권장) — 5분
 

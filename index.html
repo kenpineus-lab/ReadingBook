@@ -28,20 +28,22 @@
     --red:#C4614B;     /* book cloth - errors only */
     --violet:#A98BC4;  /* ribbon - where the two readings differ */
     --onAccent:#1A1209;
+    --amberTop:#E0A257; --greenTop:#92B79A;
     --grain:overlay; --grainO:.05; --shelfO:.24;
     --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
   }
-  html[data-theme="day"]{     /* daylight: white paper, colour only where it means something */
-    --bg:#FBFAF9; --bg2:#FFFFFF; --panel:#FFFFFF; --panel2:#FFFFFF; --line:#EDE8E3;
-    --text:#332C27; --sub:#8C8078; --ink:#443C36;
-    --well:#FAF7F4; --chip:#F6F1EC; --chip2:#FBEDE2; --dim:#F7F3EF; --ph:#BDB3AA;
-    --amber:#FF9E62;   /* peach - the primary action */
-    --green:#5CC7A8;   /* mint - yes, that's mine */
-    --gold:#F5B03F;    /* sunny - stars */
-    --red:#FF7F72;
-    --violet:#9D82EA;  /* lilac - where the two readings differ */
-    --onAccent:#3B2412;
-    --grain:multiply; --grainO:.022; --shelfO:.16;
+  html[data-theme="day"]{     /* daylight: cool white, sky, and air */
+    --bg:#F7FAFC; --bg2:#FFFFFF; --panel:#FFFFFF; --panel2:#FFFFFF; --line:#E6EEF4;
+    --text:#26343E; --sub:#7C8D9A; --ink:#33444F;
+    --well:#F6FAFD; --chip:#EEF4F9; --chip2:#E3F0F9; --dim:#F1F6FA; --ph:#A9B8C3;
+    --amber:#4FB6E8;   /* sky - the primary action */
+    --green:#41C7A6;   /* seafoam - yes, that's mine */
+    --gold:#FFC24D;    /* sunshine - stars, and the only warm note left */
+    --red:#FF7C8A;
+    --violet:#8C8DF0;  /* periwinkle - where the two readings differ */
+    --onAccent:#06293A;
+    --amberTop:#72C9F0; --greenTop:#62D9BC;
+    --grain:multiply; --grainO:.018; --shelfO:.14;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -52,15 +54,16 @@
     background-attachment:fixed;min-height:100vh}
   html[data-theme="day"] body{
     background:
-      radial-gradient(130% 60% at 50% -14%, rgba(255,214,180,.20) 0%, rgba(255,231,209,.08) 44%, transparent 72%),
-      linear-gradient(180deg, #FFFFFF 0%, var(--bg) 40%, #F5F1ED 100%);
+      radial-gradient(130% 62% at 50% -14%, rgba(120,195,240,.20) 0%, rgba(176,222,245,.08) 44%, transparent 74%),
+      linear-gradient(180deg, #FFFFFF 0%, var(--bg) 42%, #EDF3F8 100%);
     background-attachment:fixed}
   /* white on white needs the shadow to do the separating, not a border */
-  html[data-theme="day"] .box{border-color:#F1ECE7;
-    box-shadow:0 2px 5px -3px rgba(80,62,48,.10), 0 14px 30px -22px rgba(80,62,48,.30)}
-  html[data-theme="day"] .row>div{background:var(--well);border-color:#F1ECE7}
-  html[data-theme="day"] .sec.fixable{border-color:#E9E2DB}
-  html[data-theme="day"] .tag{color:#9A8D84}
+  html[data-theme="day"] .box{border-color:#EAF1F6;
+    box-shadow:0 2px 5px -3px rgba(40,70,92,.09), 0 14px 30px -22px rgba(40,70,92,.28)}
+  html[data-theme="day"] .row>div{background:var(--well);border-color:#EAF1F6}
+  html[data-theme="day"] .sec.fixable{border-color:#DFE9F0}
+  html[data-theme="day"] .tag{color:#8FA0AC}
+  html[data-theme="day"] h1{color:#3FA8DC}
   /* pressed-paper grain over the whole ground */
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
     background:url(assets/paper.svg) repeat;background-size:220px 220px;opacity:var(--grainO);mix-blend-mode:var(--grain)}
@@ -73,8 +76,8 @@
 
   .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
   .mark{width:32px;height:27px;flex-shrink:0}
-  html[data-theme="day"] .mark{filter:saturate(1.3) brightness(.78) hue-rotate(-6deg)}
-  html[data-theme="day"] .shelf{filter:saturate(.9) brightness(1.75) contrast(.85)}
+  html[data-theme="day"] .mark{filter:hue-rotate(168deg) saturate(1.25) brightness(.92)}
+  html[data-theme="day"] .shelf{filter:hue-rotate(155deg) saturate(.75) brightness(1.7) contrast(.8)}
   html[data-theme="day"] h1{text-shadow:none}
   h1{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;
     color:var(--gold);margin:0;text-shadow:0 1px 0 rgba(0,0,0,.5)}
@@ -89,9 +92,9 @@
     cursor:pointer;font-family:inherit;letter-spacing:.01em;transition:transform .08s}
   .big:active{transform:scale(.985)}
   .sm:active,.opt:active{transform:scale(.99)}
-  .amber{background:linear-gradient(180deg,#E0A257,var(--amber));color:var(--onAccent);
-    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(214,148,71,.8)}
-  .green{background:linear-gradient(180deg,#92B79A,var(--green));color:var(--onAccent);
+  .amber{background:linear-gradient(180deg,var(--amberTop),var(--amber));color:var(--onAccent);
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 6px 16px -10px rgba(0,0,0,.35)}
+  .green{background:linear-gradient(180deg,var(--greenTop),var(--green));color:var(--onAccent);
     box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
   .dark{background:var(--dim);color:var(--amber);border:1px solid var(--line)}
   .plain{background:var(--dim);color:var(--text);border:1px solid var(--line)}
@@ -273,13 +276,21 @@
 
   // ---------- config (server + family code live on this device only)
   var SRV = "https://readingbook-production.up.railway.app";  // not a secret - the family code is what guards the data
-  var PROFILES = [
-    { id: "henry",   name: "Henry",   icon: "🐻", level: "a 3rd grader",
-      levelEn: "a 3rd grader who reads English about two grades ahead, so pitch the questions and the writing at a 5th-grade level" },
-    { id: "jeremy",  name: "Jeremy",  icon: "🚗", level: "an 8th grader" },
-    { id: "rebecca", name: "Rebecca", icon: "🌸", level: "an adult reader", adult: true },
-    { id: "han",     name: "Han",     icon: "☕", level: "an adult reader", adult: true }
+  // Readers belong to the household the family code opens, and arrive from the
+  // server. Nothing about this family is baked into the page any more.
+  var PROFILES = [];
+  var HOUSEHOLD = "";
+  var LEVELS = [
+    ["a kindergartner", "유치원"], ["a 1st grader", "1학년"], ["a 2nd grader", "2학년"],
+    ["a 3rd grader", "3학년"], ["a 4th grader", "4학년"], ["a 5th grader", "5학년"],
+    ["a 6th grader", "6학년"], ["a 7th grader", "7학년"], ["an 8th grader", "8학년"],
+    ["a 9th grader", "9학년"], ["a 10th grader", "10학년"], ["a 11th grader", "11학년"],
+    ["a 12th grader", "12학년"], ["an adult reader", "성인"]
   ];
+  function levelLabel(l) {
+    var m = LEVELS.filter(function (x) { return x[0] === l; })[0];
+    return m ? T(m[0].replace(/^an? /, ""), m[1]) : l;
+  }
   // Not a person - the whole household's shelf. Read-only: you can look, but a
   // book is always saved to the person who read it.
   var FAMILY = { id: "all", name: "Family", icon: "👪" };
@@ -293,28 +304,61 @@
                "⚽","🎸","🐙","🦉","🌙","⭐","🍀","🐳",
                "🎨","🧁","🦄","🐢","🔭","🧩","🌵","🍕"];
   function isFamily() { return cfg.profile === "all"; }
+  var NOBODY = { id: "", name: "Reader", icon: "📖", level: "a young reader" };
   function who(id) {
-    var pr = PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0];
-    var chosen = S.icons && S.icons[pr.id];
-    return chosen ? { id: pr.id, name: pr.name, icon: chosen, level: pr.level, levelEn: pr.levelEn, adult: pr.adult } : pr;
+    return PROFILES.filter(function (x) { return x.id === id; })[0] || PROFILES[0] || NOBODY;
+  }
+  function adoptMembers(rows) {
+    PROFILES = (rows || []).map(function (m) {
+      return { id: m.id, name: m.name, icon: m.icon || "📖", level: m.level,
+               levelEn: m.level_en || null, adult: !!m.is_adult };
+    });
   }
   var cfg = {
     srv: localStorage.getItem("bl:srv") || SRV,
     code: localStorage.getItem("bl:code") || "",
     profile: localStorage.getItem("bl:profile") || "henry"
   };
-  // the icon belongs to the person, not to the device, so it lives on the server
-  async function loadIcons() {
+  // One code, one household. Everything the page draws about people comes from here.
+  async function loadMe() {
     if (needSetup()) return;
-    try { S.icons = await api("/profiles"); } catch (e) { S.icons = {}; }
+    try {
+      var me = await api("/me");
+      HOUSEHOLD = me.household || "";
+      adoptMembers(me.members);
+      if (!PROFILES.length) { S.editing = "+"; }   // a brand new household: ask who reads
+      else if (!PROFILES.filter(function (x) { return x.id === cfg.profile; }).length && cfg.profile !== "all") {
+        cfg.profile = PROFILES[0].id; localStorage.setItem("bl:profile", cfg.profile);
+      }
+      err("");
+    } catch (e) {
+      fail(e, T("Couldn't reach the server.", "서버에 연결하지 못했어요."));
+    }
     renderWho(); renderLibrary();
   }
-  async function setIcon(ic) {
-    var id = P();
-    if (id === "all") return;
-    S.icons[id] = ic; S.picking = false; renderWho(); renderLibrary();
-    try { await api("/profiles", { method: "POST", body: JSON.stringify({ profile: id, icon: ic }) }); }
-    catch (e) { fail(e, T("Couldn't save that icon.", "아이콘을 저장 못 했어요.")); }
+
+  async function saveMember(body, thenClose) {
+    try {
+      var r = await api("/members", { method: "POST", body: JSON.stringify(body) });
+      adoptMembers(r.members);
+      if (thenClose) S.editing = null;
+      if (!PROFILES.filter(function (x) { return x.id === cfg.profile; }).length && PROFILES.length) {
+        cfg.profile = PROFILES[0].id; localStorage.setItem("bl:profile", cfg.profile);
+      }
+      renderWho(); renderLibrary(); loadBooks();
+    } catch (e) { fail(e, T("Couldn't save that.", "저장하지 못했어요.")); }
+  }
+
+  async function removeMember(id) {
+    if (!confirm(T("Remove this reader?", "이 사람을 지울까요?"))) return;
+    try {
+      var r = await api("/members/" + encodeURIComponent(id), { method: "DELETE" });
+      adoptMembers(r.members); S.editing = null;
+      if (cfg.profile === id && PROFILES.length) {
+        cfg.profile = PROFILES[0].id; localStorage.setItem("bl:profile", cfg.profile);
+      }
+      renderWho(); renderLibrary(); loadBooks();
+    } catch (e) { fail(e, T("Couldn't remove that reader.", "지우지 못했어요.")); }
   }
 
   // day or night - remembered per device, like the rest of the setup
@@ -328,7 +372,8 @@
   function P() {
     var id = cfg.profile === "test" ? "han" : cfg.profile;   // "test" was the old name for Han's shelf
     if (id === "all") return "all";
-    return PROFILES.filter(function (x) { return x.id === id; }).length ? id : "henry";
+    if (PROFILES.filter(function (x) { return x.id === id; }).length) return id;
+    return PROFILES.length ? PROFILES[0].id : "";
   }
   function RP() { return who(S.asProfile || P()); }   // never "all"; while revising, the book's owner
   function RN() { return RP().name; }                        // whose report the AI is writing
@@ -351,7 +396,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, icons: {}, picking: false, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   // What the reader is told when the machine behind the machine says no.
@@ -363,6 +408,7 @@
     overloaded:    ["The AI is very busy right now. Try again in a minute.", "AI가 지금 너무 바빠요. 잠깐 뒤에 다시 해요."],
     bad_key:       ["The AI key isn't working. Dad needs to check it.", "AI 열쇠가 안 맞아요. 아빠가 확인해야 해요."],
     image_too_big: ["That photo was too big. Try taking it again.", "사진이 너무 커요. 다시 찍어볼래요?"],
+    daily_cap:     ["That's all the AI for today. It starts again tomorrow.", "오늘 AI는 여기까지예요. 내일 다시 할 수 있어요."],
     upstream:      ["The AI didn't answer this time. Try again.", "AI가 이번엔 대답을 안 했어요. 다시 해볼래요?"]
   };
 
@@ -424,6 +470,109 @@
     $("who").classList.toggle("hide", id !== "library" || needSetup());
   }
 
+  // name, face, reading level - everything that makes the AI talk to the right
+  // person. A household that can't add its own readers is somebody else's app.
+  function personPanel(which) {
+    var isNew = (which === "+"), me = isNew ? null : who(which);
+    var box = el("div");
+    box.style.cssText = "margin-top:12px;padding-top:12px;border-top:1px solid var(--line)";
+    box.onclick = function (e) { e.stopPropagation(); };
+
+    var head = el("div", null, isNew ? T("Who else reads here?", "누가 더 읽나요?") : T("About this reader", "이 사람 설정"));
+    head.style.cssText = "font-size:10px;letter-spacing:.09em;color:var(--sub);margin-bottom:9px";
+    box.appendChild(head);
+
+    var nameIn = el("input");
+    nameIn.placeholder = T("Name", "이름");
+    nameIn.value = me ? me.name : "";
+    nameIn.maxLength = 24;
+    box.appendChild(nameIn);
+
+    var pickedIcon = me ? me.icon : ICONS[0];
+    var g = el("div");
+    g.style.cssText = "display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px";
+    ICONS.forEach(function (ic) {
+      var b = el("button", "sm", ic);
+      function paint() {
+        b.style.cssText = "padding:8px 0;font-size:19px;text-align:center;background:" +
+          (ic === pickedIcon ? "var(--chip2)" : "transparent") +
+          ";border:1px solid " + (ic === pickedIcon ? "var(--amber)" : "var(--line)");
+      }
+      paint();
+      b.onclick = function (e) {
+        e.stopPropagation(); pickedIcon = ic;
+        Array.prototype.forEach.call(g.children, function (c) { if (c.repaint) c.repaint(); });
+      };
+      b.repaint = paint;
+      g.appendChild(b);
+    });
+    box.appendChild(g);
+
+    var pickedLevel = me ? me.level : "a 3rd grader";
+    var lv = el("div");
+    lv.style.cssText = "display:flex;flex-wrap:wrap;gap:5px;margin-top:11px";
+    var lvHead = el("div", null, T("Reading level", "읽기 수준"));
+    lvHead.style.cssText = "font-size:10px;letter-spacing:.09em;color:var(--sub);width:100%;margin-bottom:2px";
+    lv.appendChild(lvHead);
+    LEVELS.forEach(function (L2) {
+      var b = el("button", "sm", T(L2[0].replace(/^an? /, ""), L2[1]));
+      function paint() {
+        b.style.cssText = "padding:6px 10px;font-size:11px;font-weight:700;background:" +
+          (L2[0] === pickedLevel ? "var(--amber)" : "transparent") + ";color:" +
+          (L2[0] === pickedLevel ? "var(--onAccent)" : "var(--sub)") + ";border:1px solid var(--line)";
+      }
+      paint();
+      b.onclick = function (e) {
+        e.stopPropagation(); pickedLevel = L2[0];
+        Array.prototype.forEach.call(lv.children, function (c) { if (c.repaint) c.repaint(); });
+      };
+      b.repaint = paint;
+      lv.appendChild(b);
+    });
+    box.appendChild(lv);
+
+    var ahead = !!(me && me.levelEn);
+    var ab = el("button", "sm", "");
+    function paintAhead() {
+      ab.textContent = (ahead ? "☑ " : "☐ ") + T("English runs two grades ahead", "영어책은 두 학년 위로");
+      ab.style.cssText = "margin-top:10px;padding:7px 11px;font-size:11px;font-weight:700;background:transparent;" +
+        "border:1px solid " + (ahead ? "var(--violet)" : "var(--line)") + ";color:" + (ahead ? "var(--violet)" : "var(--sub)");
+    }
+    paintAhead();
+    ab.onclick = function (e) { e.stopPropagation(); ahead = !ahead; paintAhead(); };
+    box.appendChild(ab);
+
+    var acts = el("div");
+    acts.style.cssText = "display:flex;gap:8px;margin-top:13px";
+    var save = el("button", "big green", isNew ? T("Add this reader", "추가하기") : T("Save", "저장"));
+    save.style.cssText = "flex:1;padding:12px;font-size:13px";
+    save.onclick = function (e) {
+      e.stopPropagation();
+      var nm = nameIn.value.trim();
+      if (!nm) { nameIn.focus(); return; }
+      saveMember({
+        id: isNew ? null : me.id, name: nm, icon: pickedIcon, level: pickedLevel,
+        is_adult: pickedLevel === "an adult reader",
+        level_en: ahead ? (pickedLevel + " who reads English about two grades ahead, so pitch the questions and the writing two grades higher") : ""
+      }, true);
+    };
+    acts.appendChild(save);
+    var cancel = el("button", "big plain", T("Cancel", "취소"));
+    cancel.style.cssText = "flex:0 0 auto;padding:12px 16px;font-size:13px";
+    cancel.onclick = function (e) { e.stopPropagation(); S.editing = null; renderWho(); };
+    acts.appendChild(cancel);
+    box.appendChild(acts);
+
+    if (!isNew) {
+      var del = el("button", "sm", T("Remove this reader", "이 사람 지우기"));
+      del.style.cssText = "margin-top:9px;color:var(--red);background:transparent";
+      del.onclick = function (e) { e.stopPropagation(); removeMember(me.id); };
+      box.appendChild(del);
+    }
+    setTimeout(function () { if (isNew) nameIn.focus(); }, 0);
+    return box;
+  }
+
   function renderWho() {
     var w = $("who"); w.innerHTML = "";
     var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap";
@@ -442,29 +591,28 @@
       };
       row.appendChild(b);
     });
-    if (!isFamily()) {
+    if (!isFamily() && PROFILES.length) {
       var pen = el("button", "sm", "✎");
-      pen.title = "Change my icon";
+      pen.title = T("Edit this reader", "이 사람 설정");
       pen.style.cssText = "padding:7px 10px;font-size:12px;color:var(--sub);background:transparent;border:1px solid var(--line)";
-      pen.onclick = function () { S.picking = !S.picking; renderWho(); };
+      pen.onclick = function () { S.editing = (S.editing === P()) ? null : P(); renderWho(); };
       row.appendChild(pen);
     }
+    var plus = el("button", "sm", "＋");
+    plus.title = T("Add a reader", "읽는 사람 추가");
+    plus.style.cssText = "padding:7px 11px;font-size:13px;font-weight:800;color:var(--green);background:transparent;border:1px dashed var(--line)";
+    plus.onclick = function () { S.editing = (S.editing === "+") ? null : "+"; renderWho(); };
+    row.appendChild(plus);
+
     w.appendChild(row);
+    if (S.editing) w.appendChild(personPanel(S.editing));
 
-    if (S.picking && !isFamily()) {
-      var g = el("div");
-      g.style.cssText = "display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px";
-      ICONS.forEach(function (ic) {
-        var b = el("button", "sm", ic);
-        var mine = ic === who(P()).icon;
-        b.style.cssText = "padding:8px 0;font-size:19px;text-align:center;background:" +
-          (mine ? "var(--chip2)" : "transparent") + ";border:1px solid " + (mine ? "var(--amber)" : "var(--line)");
-        b.onclick = function () { setIcon(ic); };
-        g.appendChild(b);
-      });
-      w.appendChild(g);
+    if (!PROFILES.length) {
+      var e0 = el("div", null, T("Nobody reads here yet. Tap ＋ to add the first reader.",
+                                 "아직 아무도 없어요. ＋ 를 눌러 첫 번째 사람을 추가해요."));
+      e0.style.cssText = "font-size:11px;color:var(--sub);margin-top:9px;line-height:1.5";
+      w.appendChild(e0);
     }
-
     if (isFamily()) {
       var counts = {};
       S.books.forEach(function (x) { counts[x.profile || "henry"] = (counts[x.profile || "henry"] || 0) + 1; });
@@ -1131,7 +1279,7 @@
     if (!c) { $("code").focus(); return; }
     cfg.code = c;
     localStorage.setItem("bl:srv", cfg.srv); localStorage.setItem("bl:code", cfg.code);
-    $("setup").classList.add("hide"); renderWho(); show("library"); loadBooks(); loadIcons();
+    $("setup").classList.add("hide"); renderWho(); show("library"); loadMe(); loadBooks();
   };
   $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
   if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
@@ -1140,7 +1288,7 @@
     var t = document.documentElement.getAttribute("data-theme") === "day" ? "night" : "day";
     localStorage.setItem("bl:theme", t); applyTheme(t);
   };
-  renderWho(); renderLibrary(); loadBooks(); loadIcons(); show("library");
+  renderWho(); renderLibrary(); loadMe(); loadBooks(); show("library");
 })();
 </script>
 </body>
