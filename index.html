@@ -317,22 +317,38 @@
                levelEn: m.level_en || null, adult: !!m.is_adult };
     });
   }
+  // Devices are not shared in this house, so a device can simply know whose it
+  // is. That is the whole identity model: no passwords for an 8-year-old, and
+  // no way for him to land on his sister's shelf by mistake.
   var cfg = {
     srv: localStorage.getItem("bl:srv") || SRV,
     code: localStorage.getItem("bl:code") || "",
-    profile: localStorage.getItem("bl:profile") || "henry"
+    who: localStorage.getItem("bl:who") || "",        // this device belongs to
+    profile: localStorage.getItem("bl:profile") || ""  // the shelf being looked at
   };
+  function ME() { return cfg.who; }
+  function amAdult() { var m = PROFILES.filter(function (x) { return x.id === ME(); })[0]; return !!(m && m.adult); }
+  function pinNow() { try { return sessionStorage.getItem("bl:pin") || ""; } catch (e) { return ""; } }
+  function setPin(v) { try { v ? sessionStorage.setItem("bl:pin", v) : sessionStorage.removeItem("bl:pin"); } catch (e) { } }
   // One code, one household. Everything the page draws about people comes from here.
   async function loadMe() {
     if (needSetup()) return;
     try {
       var me = await api("/me");
       HOUSEHOLD = me.household || "";
+      S.hasPin = !!me.has_pin;
       adoptMembers(me.members);
       if (!PROFILES.length) { S.editing = "+"; }   // a brand new household: ask who reads
-      else if (!PROFILES.filter(function (x) { return x.id === cfg.profile; }).length && cfg.profile !== "all") {
-        cfg.profile = PROFILES[0].id; localStorage.setItem("bl:profile", cfg.profile);
+      else if (!cfg.who) { S.claiming = true; }    // a device that hasn't said whose it is
+      else if (!PROFILES.filter(function (x) { return x.id === ME(); }).length) {
+        cfg.who = ""; localStorage.removeItem("bl:who"); S.claiming = true;
       }
+      if (cfg.who && !amAdult()) {                 // a child's device only ever shows their shelf
+        cfg.profile = (cfg.profile === "all") ? "all" : cfg.who;
+      } else if (!PROFILES.filter(function (x) { return x.id === cfg.profile; }).length && cfg.profile !== "all") {
+        cfg.profile = cfg.who || PROFILES[0].id;
+      }
+      localStorage.setItem("bl:profile", cfg.profile);
       err("");
     } catch (e) {
       fail(e, T("Couldn't reach the server.", "서버에 연결하지 못했어요."));
@@ -345,6 +361,10 @@
       var r = await api("/members", { method: "POST", body: JSON.stringify(body) });
       adoptMembers(r.members);
       if (thenClose) S.editing = null;
+      if (!cfg.who && r.members.length === 1) {    // first reader in a new household
+        cfg.who = r.members[0].id; localStorage.setItem("bl:who", cfg.who);
+        cfg.profile = cfg.who; localStorage.setItem("bl:profile", cfg.profile);
+      }
       if (!PROFILES.filter(function (x) { return x.id === cfg.profile; }).length && PROFILES.length) {
         cfg.profile = PROFILES[0].id; localStorage.setItem("bl:profile", cfg.profile);
       }
@@ -362,6 +382,37 @@
       }
       renderWho(); renderLibrary(); loadBooks();
     } catch (e) { fail(e, T("Couldn't remove that reader.", "지우지 못했어요.")); }
+  }
+
+  // A grown-up code, held for this browser session only. It is a guardrail, not
+  // a lock: it stops a child wandering in, not a child with a debugger.
+  async function unlock() {
+    if (!amAdult()) { err(T("A grown-up does that part.", "그건 어른이 하는 거예요.")); return false; }
+    if (pinNow()) return true;
+    if (!S.hasPin) return true;                  // no code set yet - nothing to check
+    var v = prompt(T("Grown-up code", "어른 코드"));
+    if (!v) return false;
+    try {
+      await api("/pin/check", { method: "POST", body: JSON.stringify({ pin: v.trim() }) });
+      setPin(v.trim());
+      return true;
+    } catch (e) { fail(e, T("That code doesn't match.", "코드가 맞지 않아요.")); return false; }
+  }
+
+  async function makePin() {
+    var v = prompt(T("Choose a grown-up code (4-12 digits)", "어른 코드를 정해요 (숫자 4~12자리)"));
+    if (!v) return;
+    var body = { pin: v.trim() };
+    if (S.hasPin) {
+      var old = prompt(T("Current grown-up code", "지금 어른 코드"));
+      if (!old) return;
+      body.current = old.trim();
+    }
+    try {
+      await api("/pin", { method: "POST", body: JSON.stringify(body) });
+      setPin(v.trim()); S.hasPin = true; renderWho();
+      err("");
+    } catch (e) { fail(e, T("Couldn't set that code.", "코드를 설정하지 못했어요.")); }
   }
 
   // day or night - remembered per device, like the rest of the setup
@@ -399,7 +450,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, claiming: false, hasPin: false, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   // What the reader is told when the machine behind the machine says no.
@@ -412,11 +463,17 @@
     bad_key:       ["The AI key isn't working. Dad needs to check it.", "AI 열쇠가 안 맞아요. 아빠가 확인해야 해요."],
     image_too_big: ["That photo was too big. Try taking it again.", "사진이 너무 커요. 다시 찍어볼래요?"],
     daily_cap:     ["That's all the AI for today. It starts again tomorrow.", "오늘 AI는 여기까지예요. 내일 다시 할 수 있어요."],
+    adults_only:   ["A grown-up does that part.", "그건 어른이 하는 거예요."],
+    need_pin:      ["That grown-up code doesn't match.", "어른 코드가 맞지 않아요."],
+    not_your_shelf:["That's someone else's shelf.", "그건 다른 사람 책장이에요."],
     upstream:      ["The AI didn't answer this time. Try again.", "AI가 이번엔 대답을 안 했어요. 다시 해볼래요?"]
   };
 
   async function api(path, opts) {
-    var r = await fetch(cfg.srv.replace(/\/$/, "") + path, Object.assign({ headers: { "Content-Type": "application/json", "x-family-code": cfg.code } }, opts || {}));
+    var h = { "Content-Type": "application/json", "x-family-code": cfg.code };
+    if (cfg.who) h["x-reader"] = cfg.who;
+    if (pinNow()) h["x-pin"] = pinNow();
+    var r = await fetch(cfg.srv.replace(/\/$/, "") + path, Object.assign({ headers: h }, opts || {}));
     if (r.status === 401) throw new Error(T("Family code doesn't match. Ask Dad.", "가족 코드가 안 맞아요. 아빠한테 물어봐요."));
     if (!r.ok) {
       var d = null;
@@ -576,12 +633,41 @@
     return box;
   }
 
+  // Asked once per device, by whoever sets it up.
+  function claimPanel() {
+    var box = el("div");
+    box.style.cssText = "margin-top:12px;padding-top:12px;border-top:1px solid var(--line)";
+    var h = el("div", null, T("Whose device is this?", "이 기기는 누구 거예요?"));
+    h.style.cssText = "font-size:12px;font-weight:700;margin-bottom:4px";
+    box.appendChild(h);
+    var note = el("p", "note", T("Asked once. It decides whose shelf this device saves to.",
+                                 "한 번만 물어봐요. 이 기기가 누구 책장에 저장할지 정해져요."));
+    note.style.margin = "0 0 10px";
+    box.appendChild(note);
+    var g = el("div"); g.style.cssText = "display:flex;flex-wrap:wrap;gap:7px";
+    PROFILES.forEach(function (pr) {
+      var b = el("button", "sm", pr.icon + " " + pr.name);
+      b.style.cssText = "padding:9px 14px;font-size:13px;font-weight:700;color:var(--text);background:var(--chip)";
+      b.onclick = function () {
+        cfg.who = pr.id; localStorage.setItem("bl:who", pr.id);
+        cfg.profile = pr.id; localStorage.setItem("bl:profile", pr.id);
+        S.claiming = false; renderWho(); renderLibrary(); loadBooks();
+      };
+      g.appendChild(b);
+    });
+    box.appendChild(g);
+    return box;
+  }
+
   function renderWho() {
     var w = $("who"); w.innerHTML = "";
     var row = el("div"); row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap";
     var lab = el("div", null, "WHOSE BOOKS"); lab.style.cssText = "font-size:10px;letter-spacing:.08em;color:var(--sub);width:100%;margin-bottom:3px";
     row.appendChild(lab);
-    PROFILES.map(function (x) { return who(x.id); }).concat([FAMILY]).forEach(function (pr) {
+    // a child's device offers their own shelf and the family one; nothing else
+    var shown = amAdult() ? PROFILES.map(function (x) { return who(x.id); })
+                          : PROFILES.filter(function (x) { return x.id === ME(); }).map(function (x) { return who(x.id); });
+    shown.concat([FAMILY]).forEach(function (pr) {
       var on = pr.id === P();
       var b = el("button", "sm", pr.icon + " " + pr.name);
       b.style.cssText = "padding:7px 11px;font-size:12px;font-weight:800;border-radius:9px;" +
@@ -594,21 +680,33 @@
       };
       row.appendChild(b);
     });
-    if (!isFamily() && PROFILES.length) {
+    if (amAdult() && !isFamily() && PROFILES.length) {
       var pen = el("button", "sm", "✎");
       pen.title = T("Edit this reader", "이 사람 설정");
       pen.style.cssText = "padding:7px 10px;font-size:12px;color:var(--sub);background:transparent;border:1px solid var(--line)";
-      pen.onclick = function () { S.editing = (S.editing === P()) ? null : P(); renderWho(); };
+      pen.onclick = async function () { if (await unlock()) { S.editing = (S.editing === P()) ? null : P(); renderWho(); } };
       row.appendChild(pen);
     }
-    var plus = el("button", "sm", "＋");
-    plus.title = T("Add a reader", "읽는 사람 추가");
-    plus.style.cssText = "padding:7px 11px;font-size:13px;font-weight:800;color:var(--green);background:transparent;border:1px dashed var(--line)";
-    plus.onclick = function () { S.editing = (S.editing === "+") ? null : "+"; renderWho(); };
-    row.appendChild(plus);
+    if (amAdult() || !PROFILES.length) {
+      var plus = el("button", "sm", "＋");
+      plus.title = T("Add a reader", "읽는 사람 추가");
+      plus.style.cssText = "padding:7px 11px;font-size:13px;font-weight:800;color:var(--green);background:transparent;border:1px dashed var(--line)";
+      plus.onclick = async function () {
+        if (PROFILES.length && !(await unlock())) return;
+        S.editing = (S.editing === "+") ? null : "+"; renderWho();
+      };
+      row.appendChild(plus);
+    }
 
     w.appendChild(row);
+    if (S.claiming) { w.appendChild(claimPanel()); return; }
     if (S.editing) w.appendChild(personPanel(S.editing));
+    if (amAdult() && !S.hasPin && PROFILES.length > 1) {
+      var nag = el("button", "sm", "\ud83d\udd12 " + T("Set a grown-up code", "어른 코드 만들기"));
+      nag.style.cssText = "margin-top:10px;color:var(--amber);background:transparent;border:1px dashed var(--amber)";
+      nag.onclick = makePin;
+      w.appendChild(nag);
+    }
 
     if (!PROFILES.length) {
       var e0 = el("div", null, T("Nobody reads here yet. Tap ＋ to add the first reader.",
@@ -683,7 +781,10 @@
     if (S.title) showCover();
     }
 
-    if (S.books.length) {
+    // The family view answers "what is everyone reading", and nothing else. Its
+    // own stat tiles duplicated the personal shelf and a household streak means
+    // nothing, so they are gone.
+    if (S.books.length && !isFamily()) {
       var now = new Date(), ym = now.toISOString().slice(0, 7);
       var month = S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; }).length;
       var w = S.books.reduce(function (a, x) { return a + (x.henryWins || 0); }, 0);
@@ -728,6 +829,10 @@
         };
       });
       if (S.stat) L.appendChild(statDetail(S.stat));
+    }
+
+    // the list of books is the one thing the family view is for, so it stays
+    if (S.books.length) {
 
       var lst = el("div", "box");
       lst.innerHTML = '<div class="lbl">' + (isFamily() ? "EVERY BOOK THIS FAMILY HAS FINISHED" : "BOOKS YOU\'VE FINISHED") + ' · ' + S.books.length + '</div>';
@@ -739,7 +844,15 @@
         var eb = el("button", "sm", "✎"); eb.style.color = "var(--violet)"; eb.title = "Revise this report";
         eb.onclick = function () { editReport(x); };
         r.appendChild(eb);
-        var db = el("button", "sm", "✕"); db.style.color = "var(--sub)"; db.onclick = async function () { if (!confirm("Remove this book?")) return; try { await api("/books/" + x.id + "?profile=" + (isFamily() ? (x.profile || "henry") : P()), { method: "DELETE" }); } catch (e) { fail(e, T("Couldn't remove it.", "못 지웠어요.")); } loadBooks(); };
+        var mine = (x.profile || "") === ME();
+        var db = el("button", "sm", "✕"); db.style.color = "var(--sub)";
+        if (!mine && !amAdult()) db.classList.add("hide");
+        db.onclick = async function () {
+          if (!mine && !(await unlock())) return;
+          if (!confirm(T("Remove this book?", "이 책을 지울까요?"))) return;           try { await api("/books/" + x.id + "?profile=" + (x.profile || P()), { method: "DELETE" }); }
+          catch (e) { fail(e, T("Couldn't remove it.", "못 지웠어요.")); }
+          loadBooks();
+        };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
       L.appendChild(lst);

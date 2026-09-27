@@ -23,6 +23,40 @@ server/requirements.txt, Procfile, railway.json
 README.md             deploy guide (Korean)
 ```
 
+## Who is using it — roles, and what each screen is for
+
+Devices are not shared in this house, so **a device knows whose it is** (`bl:who`, asked once
+by whoever sets it up). That is the whole identity model: no passwords for an 8-year-old, and
+no way for him to land on his sister's shelf by mistake. Grown-up territory sits behind a
+4-12 digit PIN held in `sessionStorage`.
+
+**Say this plainly when it comes up: it is a guardrail, not security.** The page sends
+`x-reader` and the server trusts it; a child with a debugger gets through. It stops mess and
+idle snooping, which is what a family actually needs. Real per-person auth is the work that
+comes with selling this, not before.
+
+|            | own shelf | family | delete others | add/edit readers | parent view |
+|------------|:---------:|:------:|:-------------:|:----------------:|:-----------:|
+| child      | ✅        | ✅     | ❌            | ❌               | ❌          |
+| adult      | ✅        | ✅     | ✅            | ✅               | ✅          |
+
+A child's device does not *hide* those controls, it does not render them — `amAdult()` gates
+the switcher down to their own chip plus Family. The server enforces the same rules
+independently (`actor()` / `require_adult()`); never rely on the page alone.
+
+**Each screen answers one question, and only one.** This is the rule that stops the app
+growing four dashboards:
+
+- **My shelf** — "what have I read, what did I write?" Stats and drill-downs live here.
+- **Family** — "what is everyone reading?" A shared *list*, deliberately with **no stat
+  tiles**: a household streak means nothing and aggregate counts just repeat the personal
+  shelf. Per-person counts sit in the switcher.
+- **Parent view** — "is this child engaging, and is their writing growing *over time*?"
+  Trend and evidence only; the per-book "what the AI wrote first" comparison stays on the
+  report where the child can see it too.
+
+If a new number could go in two of those, it belongs in the one whose question it answers.
+
 ## Households — the tenant boundary
 
 The database holds many families. A **household** owns its readers, their books, its

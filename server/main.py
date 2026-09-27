@@ -215,6 +215,8 @@ def _ensure_schema(con):
             con.execute("CREATE TABLE settings_v3 (k TEXT PRIMARY KEY, v TEXT NOT NULL)")
     for stmt in SCHEMA:
         con.execute(stmt)
+    if "pin_hash" not in [r["name"] for r in con.execute("PRAGMA table_info(households)")]:
+        con.execute("ALTER TABLE households ADD COLUMN pin_hash TEXT")
     con.commit()
     if needs_move:
         _migrate_v3_to_v4(con)
@@ -245,6 +247,29 @@ def house(code: str | None):
 def admin(code: str | None):
     if not ADMIN_CODE or not code or not secrets.compare_digest(code, ADMIN_CODE):
         raise HTTPException(401, "not the operator")
+
+
+def actor(con, hh, reader: str | None):
+    """Who this request says it is. The page sends it; a determined child could
+    forge it. This is a guardrail against mess and idle snooping, not security -
+    real per-person auth is the work that comes with selling this."""
+    if not reader:
+        return None
+    r = con.execute("SELECT * FROM members WHERE hh=? AND id=?", (hh, reader.strip().lower())).fetchone()
+    return r
+
+
+def require_adult(con, hh_row, reader: str | None, pin: str | None):
+    """Grown-up territory: other people's shelves, who exists, and the parent
+    view. Needs an adult reader and, once a PIN is set, that PIN."""
+    a = actor(con, hh_row["hh"], reader)
+    if not a or not a["is_adult"]:
+        raise HTTPException(403, {"code": "adults_only", "detail": "that's for a grown-up"})
+    ph = hh_row["pin_hash"] if "pin_hash" in hh_row.keys() else None
+    if ph:
+        if not pin or code_hash(con, "pin:" + pin.strip()) != ph:
+            raise HTTPException(403, {"code": "need_pin", "detail": "the grown-up code doesn't match"})
+    return a
 
 
 def members_of(con, hh) -> list[dict]:
@@ -424,6 +449,7 @@ def me(x_family_code: str | None = Header(default=None)):
     return {
         "household": hh["name"],
         "members": members_of(con, hh["hh"]),
+        "has_pin": bool(hh["pin_hash"] if "pin_hash" in hh.keys() else None),
         "ai": {"used_today": used["n"] if used else 0, "cap": hh["ai_cap"] or AI_DAILY_CAP},
         "backup": bool(hh["backup"] and GH_TOKEN and GH_REPO),
     }
@@ -439,8 +465,11 @@ class MemberReq(BaseModel):
 
 
 @app.post("/members")
-def upsert_member(req: MemberReq, x_family_code: str | None = Header(default=None)):
+def upsert_member(req: MemberReq, x_family_code: str | None = Header(default=None),
+                  x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
     con, hh = house(x_family_code)
+    if members_of(con, hh["hh"]):        # the very first reader has nobody to ask
+        require_adult(con, hh, x_reader, x_pin)
     existing = {m["id"]: m for m in members_of(con, hh["hh"])}
 
     mid = (req.id or slug(req.name or "")).strip().lower()
@@ -469,8 +498,10 @@ def upsert_member(req: MemberReq, x_family_code: str | None = Header(default=Non
 
 
 @app.delete("/members/{member_id}")
-def remove_member(member_id: str, x_family_code: str | None = Header(default=None)):
+def remove_member(member_id: str, x_family_code: str | None = Header(default=None),
+                  x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
     con, hh = house(x_family_code)
+    require_adult(con, hh, x_reader, x_pin)
     n = con.execute("SELECT COUNT(*) c FROM books WHERE hh=? AND profile=?",
                     (hh["hh"], member_id)).fetchone()["c"]
     if n:
@@ -482,6 +513,38 @@ def remove_member(member_id: str, x_family_code: str | None = Header(default=Non
 
 
 # ----------------------------------------------------------------- books
+
+class PinReq(BaseModel):
+    pin: str
+    current: str | None = None
+
+
+@app.post("/pin")
+def set_pin(req: PinReq, x_family_code: str | None = Header(default=None),
+            x_reader: str | None = Header(default=None)):
+    """Set or change the grown-up code. Changing it needs the old one."""
+    con, hh = house(x_family_code)
+    me = actor(con, hh["hh"], x_reader)
+    if not me or not me["is_adult"]:
+        raise HTTPException(403, {"code": "adults_only", "detail": "that's for a grown-up"})
+    ph = hh["pin_hash"] if "pin_hash" in hh.keys() else None
+    if ph and (not req.current or code_hash(con, "pin:" + req.current.strip()) != ph):
+        raise HTTPException(403, {"code": "need_pin", "detail": "the current grown-up code doesn't match"})
+    pin = (req.pin or "").strip()
+    if not (4 <= len(pin) <= 12) or not pin.isdigit():
+        raise HTTPException(400, "the grown-up code is 4 to 12 digits")
+    con.execute("UPDATE households SET pin_hash=? WHERE hh=?", (code_hash(con, "pin:" + pin), hh["hh"]))
+    con.commit()
+    return {"ok": True}
+
+
+@app.post("/pin/check")
+def check_pin(req: PinReq, x_family_code: str | None = Header(default=None),
+              x_reader: str | None = Header(default=None)):
+    con, hh = house(x_family_code)
+    require_adult(con, hh, x_reader, req.pin)
+    return {"ok": True}
+
 
 @app.get("/books")
 def list_books(profile: str | None = None, x_family_code: str | None = Header(default=None)):
@@ -538,9 +601,14 @@ class Book(BaseModel):
 
 
 @app.post("/books")
-def save_book(b: Book, x_family_code: str | None = Header(default=None)):
+def save_book(b: Book, x_family_code: str | None = Header(default=None),
+              x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
     con, hh = house(x_family_code)
     p = prof(con, hh["hh"], b.profile)
+    me = actor(con, hh["hh"], x_reader)
+    # a child writes to their own shelf and nobody else's
+    if me and not me["is_adult"] and me["id"] != p:
+        raise HTTPException(403, {"code": "not_your_shelf", "detail": "that's someone else's shelf"})
     d = b.model_dump()
     d["profile"] = p
     d = _normalise_images(d)
@@ -555,10 +623,15 @@ def save_book(b: Book, x_family_code: str | None = Header(default=None)):
 
 
 @app.delete("/books/{book_id}")
-def delete_book(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None)):
+def delete_book(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None),
+                x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
     con, hh = house(x_family_code)
+    p = prof(con, hh["hh"], profile)
+    me = actor(con, hh["hh"], x_reader)
+    if not me or (not me["is_adult"] and me["id"] != p):
+        require_adult(con, hh, x_reader, x_pin)     # removing someone else's writing is a grown-up act
     cur = con.execute("DELETE FROM books WHERE hh=? AND profile=? AND id=?",
-                      (hh["hh"], prof(con, hh["hh"], profile), book_id))
+                      (hh["hh"], p, book_id))
     con.commit()
     return {"ok": True, "deleted": cur.rowcount}
 
