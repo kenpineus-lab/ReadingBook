@@ -72,7 +72,14 @@
   html[data-theme="night"] .shelf{filter:brightness(.62) saturate(1.25) hue-rotate(-6deg)}
   .wrap{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:22px 15px 180px}
 
-  .top{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .top{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .top .sm:first-of-type{margin-left:auto}
+  /* month bars on the grown-up screen */
+  .mo{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .mo .ym{font-size:11px;color:var(--sub);width:56px;flex-shrink:0}
+  .mo .t{flex:1;height:14px;background:var(--well);border-radius:999px;overflow:hidden}
+  .mo .f{height:100%;background:linear-gradient(90deg,var(--amberTop),var(--amber));border-radius:999px}
+  .mo .c{font-size:12px;font-weight:700;width:22px;text-align:right}
   .mark{width:38px;height:29px;flex-shrink:0}
   h1{font-family:var(--ui);font-size:23px;font-weight:700;letter-spacing:.13em;
     color:var(--amber);margin:0}
@@ -244,7 +251,8 @@
   <div class="top">
     <img class="mark" src="assets/mark.svg" alt="" />
     <h1>BOOK LAB</h1>
-    <button id="themeBtn" class="sm" style="margin-left:auto" title="Day / night">☾</button>
+    <button id="parentBtn" class="sm hide" style="margin-left:auto" title="For grown-ups">📈</button>
+    <button id="themeBtn" class="sm" title="Day / night">☾</button>
     <button id="homeBtn" class="sm hide">My books</button>
   </div>
   <p class="tag">You read the book. Let's see how much the AI really knows about it.</p>
@@ -267,6 +275,7 @@
   <div id="follow" class="hide"></div>
   <div id="plan" class="hide"></div>
   <div id="report" class="hide"></div>
+  <div id="parent" class="hide"></div>
 </div>
 
 <div class="shelf" aria-hidden="true"></div>
@@ -354,6 +363,7 @@
       fail(e, T("Couldn't reach the server.", "서버에 연결하지 못했어요."));
     }
     renderWho(); renderLibrary();
+    loadBooks();          // only now do we know which shelf this device is looking at
   }
 
   async function saveMember(body, thenClose) {
@@ -450,7 +460,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, claiming: false, hasPin: false, working: false, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, claiming: false, hasPin: false, working: false, pkid: null, insight: null, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   // What the reader is told when the machine behind the machine says no.
@@ -524,8 +534,9 @@
 
   // ---------- ui helpers
   function show(id) {
-    ["library", "quiz", "follow", "plan", "report"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); });
+    ["library", "quiz", "follow", "plan", "report", "parent"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); });
     $("homeBtn").classList.toggle("hide", id === "library");
+    $("parentBtn").classList.toggle("hide", !(amAdult() && id === "library"));
     // swap profiles only from the library - never in the middle of a book
     $("who").classList.toggle("hide", id !== "library" || needSetup());
   }
@@ -924,6 +935,124 @@
 
     box.appendChild(body);
     return box;
+  }
+
+  // What a parent cannot get from the child's own shelf: the same reader over
+  // time, and evidence that a person pushed back on the draft. Everything here
+  // is a trend or a receipt; per-book comparisons stay on the report, where the
+  // child sees them too.
+  async function openParent(id) {
+    if (!(await unlock())) return;
+    var kids = PROFILES.filter(function (x) { return !x.adult; });
+    S.pkid = id || S.pkid || (kids[0] || PROFILES[0] || {}).id;
+    if (!S.pkid) { err(T("Nobody to look at yet.", "아직 볼 사람이 없어요.")); return; }
+    show("parent");
+    $("parent").innerHTML = '<div class="box busy"><div class="spin"></div><span>' +
+      T("Looking...", "보는 중...") + '</span></div>';
+    try {
+      S.insight = await api("/insight/" + encodeURIComponent(S.pkid));
+      renderParent();
+    } catch (e) { $("parent").innerHTML = ""; fail(e, T("Couldn't open that.", "열지 못했어요.")); show("library"); }
+  }
+
+  function renderParent() {
+    var d = S.insight, P2 = $("parent"), t = d.totals, R = d.reader;
+    P2.innerHTML = "";
+
+    var pick = el("div", "box");
+    pick.innerHTML = '<div class="lbl">FOR GROWN-UPS</div>';
+    var prow = el("div"); prow.style.cssText = "display:flex;gap:7px;flex-wrap:wrap";
+    PROFILES.forEach(function (pr) {
+      var on = pr.id === S.pkid;
+      var b = el("button", "sm", pr.icon + " " + pr.name);
+      b.style.cssText = "padding:7px 12px;font-size:12px;font-weight:700;" +
+        (on ? "color:var(--onAccent);background:var(--amber)" : "color:var(--sub)");
+      b.onclick = function () { openParent(pr.id); };
+      prow.appendChild(b);
+    });
+    pick.appendChild(prow);
+    P2.appendChild(pick);
+
+    // 1. what they are reading - the thing this app exists to collect
+    var ym = new Date().toISOString().slice(0, 7);
+    var thisMonth = d.books.filter(function (b) { return (b.date || "").slice(0, 7) === ym; });
+    var head = el("div", "box");
+    head.innerHTML = '<div style="font-family:var(--serif);font-size:18px;line-height:1.5">' +
+      esc(R.name) + T(" read ", "는 이번 달에 ") + '<b style="color:var(--amber)">' + thisMonth.length +
+      T(thisMonth.length === 1 ? " book" : " books", "권") + '</b>' + T(" this month.", " 읽었어요.") + '</div>' +
+      (thisMonth.length
+        ? '<div class="note" style="margin-top:8px">' + thisMonth.map(function (b) { return esc(b.title); }).join(" · ") + '</div>'
+        : '<div class="note" style="margin-top:8px">' + T("Nothing logged yet this month.", "이번 달은 아직 없어요.") + '</div>') +
+      '<div class="note">' + T("All time: ", "전체: ") + t.books + T(" books", "권") + '</div>';
+    P2.appendChild(head);
+
+    // 2. month by month
+    if (d.months.length) {
+      var mx = Math.max.apply(null, d.months.map(function (m) { return m.books; })) || 1;
+      var mb = el("div", "box");
+      mb.innerHTML = '<div class="lbl">MONTH BY MONTH</div>';
+      d.months.forEach(function (m) {
+        var r = el("div", "mo");
+        r.innerHTML = '<span class="ym">' + esc(m.ym) + '</span>' +
+          '<div class="t"><div class="f" style="width:' + (m.books / mx * 100) + '%"></div></div>' +
+          '<span class="c">' + m.books + '</span>';
+        mb.appendChild(r);
+      });
+      P2.appendChild(mb);
+    }
+
+    // 3. the receipt: did a person actually intervene
+    var FIXN = { longer: T("longer", "더 길게"), detail: T("more detail", "자세히"), funnier: T("funnier", "더 재밌게"),
+                 why: T("say why", "왜 그런지"), name: T("use the name", "이름 넣기"), feeling: T("more feeling", "느낌 더"),
+                 easier: T("simpler words", "쉬운 말로"), nospoil: T("no spoilers", "결말 빼기"), custom: T("their own words", "직접 말한 것") };
+    var ev = el("div", "box");
+    ev.innerHTML = '<div class="lbl">' + T("WHAT THEY CHANGED", "직접 고친 것") + '</div>' +
+      '<div style="font-family:var(--serif);font-size:15.5px;line-height:1.7;color:var(--ink)">' +
+        T("Of " + t.reports + " reports, " + t.revised + " were rewritten by hand — " + t.edits + " changes in all" +
+          (t.custom ? ", " + t.custom + " of them dictated in their own words" : "") + ".",
+          "독후감 " + t.reports + "편 중 " + t.revised + "편을 직접 고쳤어요 — 모두 " + t.edits + "번" +
+          (t.custom ? ", 그중 " + t.custom + "번은 직접 말로 시켰어요" : "") + ".") +
+      '</div>' +
+      (d.top_fixes.length ? '<div class="note">' + T("Most asked for: ", "가장 많이 시킨 것: ") +
+        d.top_fixes.map(function (f) { return (FIXN[f.fix] || f.fix) + " " + f.n; }).join(" · ") + '</div>' : '') +
+      (t.draft ? '<div class="row" style="margin-top:13px">' +
+          '<div><div class="n" style="color:var(--sub)">' + t.draft + '</div><div class="l">' + T("AI DRAFT", "AI 초안") + '</div></div>' +
+          '<div><div class="n" style="color:var(--amber)">' + t.words + '</div><div class="l">' + T("THEIRS", "최종") + '</div></div>' +
+        '</div><p class="note" style="margin-top:0">' +
+        T("Words, across every report that kept its first draft.", "초안이 남아 있는 독후감 전체의 어절 수예요.") + '</p>' : '');
+    P2.appendChild(ev);
+
+    // 4. where the two of them read it differently
+    var dv = el("div", "box");
+    dv.innerHTML = '<div class="lbl">' + T("READ IT THEIR OWN WAY", "다르게 읽은 곳") + '</div>' +
+      '<div style="font-family:var(--serif);font-size:15.5px;line-height:1.7;color:var(--ink)">' +
+      T("On " + t.diff + " quiz questions they landed somewhere the AI did not, and agreed on " + t.same + ".",
+        "퀴즈 " + t.diff + "문제에서 AI와 다른 곳에 닿았고, " + t.same + "문제는 같았어요.") + '</div>' +
+      '<p class="note">' + T("Neither is automatically right. Only one of them read the book.",
+                             "누가 자동으로 맞는 건 아니에요. 책을 읽은 사람은 한 명뿐이고요.") + '</p>';
+    P2.appendChild(dv);
+
+    // 5. book by book
+    if (d.books.length) {
+      var lb = el("div", "box");
+      lb.innerHTML = '<div class="lbl">' + T("BOOK BY BOOK", "책마다") + '</div>';
+      d.books.forEach(function (b) {
+        var r = el("div", "row2");
+        r.style.cssText = "display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)";
+        r.innerHTML = '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(b.title) + '</div>' +
+          '<div class="mini" style="font-size:11px;color:var(--sub);margin-top:2px">' + esc(b.date) +
+            (b.lang === "ko" ? " · 한글" : "") + (b.edits ? " · " + T(b.edits + " changes", "고침 " + b.edits + "번") : "") + '</div></div>' +
+          (b.hasDraft ? '<div style="font-size:11px;color:var(--sub);align-self:center;white-space:nowrap">' +
+             b.draft + ' <span style="color:var(--amber)">→ ' + b.words + '</span></div>' : '');
+        lb.appendChild(r);
+      });
+      P2.appendChild(lb);
+    }
+
+    var back = el("button", "big plain", "\u2039 " + T("Back", "돌아가기"));
+    back.onclick = function () { show("library"); };
+    P2.appendChild(back);
   }
 
   function showCover() {
@@ -1390,12 +1519,13 @@
 
   // ---------- boot
   $("homeBtn").onclick = function () { resetRun(); show("library"); };
+  $("parentBtn").onclick = function () { openParent(null); };
   $("saveSetup").onclick = function () {
     var c = $("code").value.trim();
     if (!c) { $("code").focus(); return; }
     cfg.code = c;
     localStorage.setItem("bl:srv", cfg.srv); localStorage.setItem("bl:code", cfg.code);
-    $("setup").classList.add("hide"); renderWho(); show("library"); loadMe(); loadBooks();
+    $("setup").classList.add("hide"); renderWho(); show("library"); loadMe();
   };
   $("code").onkeydown = function (e) { if (e.key === "Enter") $("saveSetup").click(); };
   if (needSetup()) { $("setup").classList.remove("hide"); $("code").focus(); }
@@ -1404,7 +1534,7 @@
     var t = document.documentElement.getAttribute("data-theme") === "day" ? "night" : "day";
     localStorage.setItem("bl:theme", t); applyTheme(t);
   };
-  renderWho(); renderLibrary(); loadMe(); loadBooks(); show("library");
+  renderWho(); renderLibrary(); loadMe(); show("library");   // loadMe chains loadBooks
 })();
 </script>
 </body>

@@ -277,9 +277,12 @@ def members_of(con, hh) -> list[dict]:
         "SELECT id, name, icon, level, level_en, is_adult FROM members WHERE hh=? ORDER BY pos, id", (hh,))]
 
 
-def prof(con, hh, p: str | None) -> str:
+def prof(con, hh, p: str | None, fallback: str | None = None) -> str:
+    """Resolve the shelf being asked for. A missing profile means *the reader
+    making the request*, never "the first person in the house" - that default
+    put one child's books on another's screen during a startup race."""
     ids = [m["id"] for m in members_of(con, hh)]
-    p = (p or (ids[0] if ids else "")).strip().lower()
+    p = (p or fallback or (ids[0] if ids else "")).strip().lower()
     if p not in ids:
         raise HTTPException(400, "unknown reader for this household")
     return p
@@ -547,13 +550,15 @@ def check_pin(req: PinReq, x_family_code: str | None = Header(default=None),
 
 
 @app.get("/books")
-def list_books(profile: str | None = None, x_family_code: str | None = Header(default=None)):
+def list_books(profile: str | None = None, x_family_code: str | None = Header(default=None),
+               x_reader: str | None = Header(default=None)):
     con, hh = house(x_family_code)
     if (profile or "").strip().lower() == "all":
         rows = con.execute("SELECT profile, data FROM books WHERE hh=? ORDER BY id DESC", (hh["hh"],)).fetchall()
     else:
+        me = actor(con, hh["hh"], x_reader)
         rows = con.execute("SELECT profile, data FROM books WHERE hh=? AND profile=? ORDER BY id DESC",
-                           (hh["hh"], prof(con, hh["hh"], profile))).fetchall()
+                           (hh["hh"], prof(con, hh["hh"], profile, me["id"] if me else None))).fetchall()
     out = []
     for r in rows:
         d = json.loads(r["data"])
@@ -567,11 +572,13 @@ def list_books(profile: str | None = None, x_family_code: str | None = Header(de
 
 
 @app.get("/books/{book_id}/cover")
-def book_cover(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None)):
+def book_cover(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None),
+               x_reader: str | None = Header(default=None)):
     """The full photo, only when something actually wants to show it."""
     con, hh = house(x_family_code)
+    me = actor(con, hh["hh"], x_reader)
     r = con.execute("SELECT data FROM books WHERE hh=? AND profile=? AND id=?",
-                    (hh["hh"], prof(con, hh["hh"], profile), book_id)).fetchone()
+                    (hh["hh"], prof(con, hh["hh"], profile, me["id"] if me else None), book_id)).fetchone()
     if not r:
         raise HTTPException(404, "no such book")
     return {"cover": json.loads(r["data"]).get("cover")}
@@ -626,14 +633,72 @@ def save_book(b: Book, x_family_code: str | None = Header(default=None),
 def delete_book(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None),
                 x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
     con, hh = house(x_family_code)
-    p = prof(con, hh["hh"], profile)
     me = actor(con, hh["hh"], x_reader)
+    p = prof(con, hh["hh"], profile, me["id"] if me else None)
     if not me or (not me["is_adult"] and me["id"] != p):
         require_adult(con, hh, x_reader, x_pin)     # removing someone else's writing is a grown-up act
     cur = con.execute("DELETE FROM books WHERE hh=? AND profile=? AND id=?",
                       (hh["hh"], p, book_id))
     con.commit()
     return {"ok": True, "deleted": cur.rowcount}
+
+
+def _words(txt) -> int:
+    """Whitespace tokens. For Korean that counts 어절 rather than words, which is
+    the wrong unit in linguistics and the right one here - we only ever compare
+    a draft against its own rewrite, so the unit just has to be consistent."""
+    return len((txt or "").split())
+
+
+def _report_words(rep) -> int:
+    if not isinstance(rep, dict):
+        return 0
+    return sum(_words(v) for k, v in rep.items() if k != "stars" and isinstance(v, str))
+
+
+@app.get("/insight/{member_id}")
+def insight(member_id: str, x_family_code: str | None = Header(default=None),
+            x_reader: str | None = Header(default=None), x_pin: str | None = Header(default=None)):
+    """What a parent cannot get from the child's own shelf: the same reader over
+    time, and evidence that a person actually pushed back on the draft."""
+    con, hh = house(x_family_code)
+    require_adult(con, hh, x_reader, x_pin)
+    m = con.execute("SELECT * FROM members WHERE hh=? AND id=?", (hh["hh"], member_id)).fetchone()
+    if not m:
+        raise HTTPException(404, "no such reader")
+
+    rows = con.execute("SELECT data FROM books WHERE hh=? AND profile=? ORDER BY id",
+                       (hh["hh"], member_id)).fetchall()
+    months, books, fixes = {}, [], {}
+    for r in rows:
+        d = json.loads(r["data"])
+        final = _report_words(d.get("report"))
+        draft = _report_words(d.get("report0"))
+        eds = d.get("edits") or []
+        custom = sum(1 for e in eds if (e or {}).get("custom"))
+        for e in eds:
+            key = (e or {}).get("custom") and "custom" or (e or {}).get("fix") or "?"
+            fixes[key] = fixes.get(key, 0) + 1
+        diff, same = int(d.get("henryWins") or 0), int(d.get("aiWins") or 0)
+        ym = (d.get("date") or "")[:7]
+        b = months.setdefault(ym, {"ym": ym, "books": 0, "words": 0, "draft": 0,
+                                   "edits": 0, "custom": 0, "diff": 0, "same": 0})
+        b["books"] += 1; b["words"] += final; b["draft"] += draft
+        b["edits"] += len(eds); b["custom"] += custom; b["diff"] += diff; b["same"] += same
+        books.append({"id": d.get("id"), "title": d.get("title"), "date": d.get("date"),
+                      "lang": d.get("lang"), "stars": (d.get("report") or {}).get("stars"),
+                      "words": final, "draft": draft, "edits": len(eds), "custom": custom,
+                      "diff": diff, "same": same, "hasDraft": bool(d.get("report0"))})
+
+    books.sort(key=lambda x: (x["date"] or ""), reverse=True)
+    top = sorted(fixes.items(), key=lambda kv: -kv[1])[:4]
+    tot = {k: sum(mm[k] for mm in months.values()) for k in ("books", "words", "draft", "edits", "custom", "diff", "same")}
+    tot["reports"] = sum(1 for b in books if b["words"])
+    tot["revised"] = sum(1 for b in books if b["edits"])
+    return {"reader": {"id": m["id"], "name": m["name"], "icon": m["icon"], "level": m["level"]},
+            "months": sorted(months.values(), key=lambda x: x["ym"], reverse=True)[:12],
+            "top_fixes": [{"fix": k, "n": v} for k, v in top],
+            "books": books, "totals": tot}
 
 
 @app.post("/backup")

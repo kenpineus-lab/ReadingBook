@@ -57,6 +57,15 @@ growing four dashboards:
 
 If a new number could go in two of those, it belongs in the one whose question it answers.
 
+`GET /insight/{member}` computes the parent numbers server-side (adult + PIN). Word counts are
+whitespace tokens — 어절 in Korean, which is the wrong linguistic unit and the right one here,
+since we only ever compare a draft against its own rewrite.
+
+**A missing `?profile=` means the reader making the request, never "the first person in the
+house".** That default put Henry's shelf on Rebecca's screen: on a cold load `loadBooks()` raced
+`loadMe()` and fired before `PROFILES` existed, so `P()` returned `""` and the server filled in
+the first member. `loadMe()` now chains `loadBooks()`, and `prof()` falls back to the actor.
+
 ## Households — the tenant boundary
 
 The database holds many families. A **household** owns its readers, their books, its
