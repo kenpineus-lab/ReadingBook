@@ -143,6 +143,19 @@
   .row .n{font-size:30px;font-weight:700;line-height:1}
   .row .l{font-size:9px;color:var(--sub);margin-top:5px;letter-spacing:.11em;font-weight:600}
 
+  /* Your sky. The one dark thing on a daylight screen, because a sky that
+     fills up reads as yours in a way a counter never does - and because at
+     noon on the caldera you cannot see stars. */
+  .skybox{position:relative;border:none;overflow:hidden;padding:18px 18px 15px;
+    background:radial-gradient(120% 90% at 50% 0%, #21547F 0%, #143656 45%, #0D2740 100%);
+    box-shadow:0 2px 6px -4px rgba(var(--shadow),.2), 0 20px 40px -26px rgba(12,40,66,.75)}
+  .skybox svg{display:block;width:100%;height:auto}
+  .skybox .cap{display:flex;align-items:baseline;gap:8px;margin-top:12px;color:#CFE4F4}
+  .skybox .cap b{font-size:20px;font-weight:700;color:#F7D278}
+  .skybox .cap span{font-size:11.5px;opacity:.75}
+  .skybox .note{color:#A8C6DE;margin-top:6px}
+  .star{cursor:pointer}
+  .star:hover .sp{filter:brightness(1.25)}
   .langrow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
   .lang{border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:999px;
     padding:7px 13px;font-size:10px;letter-spacing:.07em;cursor:pointer;font-family:var(--ui);font-weight:700}
@@ -827,6 +840,8 @@
     // The family view answers "what is everyone reading", and nothing else. Its
     // own stat tiles duplicated the personal shelf and a household streak means
     // nothing, so they are gone.
+    if (!isFamily()) L.appendChild(skyBox());
+
     if (S.books.length && !isFamily()) {
       var now = new Date(), ym = now.toISOString().slice(0, 7);
       var month = S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; }).length;
@@ -913,6 +928,73 @@
     b.onclick = function () { S.report = x; renderReport(); show("report"); };
     r.appendChild(b);
     return r;
+  }
+
+  // Twelve is a month's sky. Each finished book lights one, in the order they
+  // were read; the rest wait as outlines.
+  var SKY_MAX = 12;
+  var SKY_POS = [[9, 31, 3.4], [18, 13, 2.6], [27, 39, 2.9], [35, 21, 3.6],
+                 [44, 10, 2.5], [50, 34, 3.2], [59, 19, 2.8], [67, 41, 3.5],
+                 [74, 12, 2.6], [82, 30, 3.1], [90, 17, 2.7], [96, 40, 2.4]];
+
+  function sparkle(cx, cy, r) {
+    return "M" + cx + " " + (cy - r) + "Q" + cx + " " + cy + " " + (cx + r) + " " + cy +
+           "Q" + cx + " " + cy + " " + cx + " " + (cy + r) +
+           "Q" + cx + " " + cy + " " + (cx - r) + " " + cy +
+           "Q" + cx + " " + cy + " " + cx + " " + (cy - r) + "Z";
+  }
+
+  function skyBox() {
+    var ym = new Date().toISOString().slice(0, 7);
+    var mine = S.books.filter(function (x) { return (x.date || "").slice(0, 7) === ym; })
+                      .slice().sort(function (a, b) { return (a.date || "") < (b.date || "") ? -1 : 1; });
+    var lit = Math.min(mine.length, SKY_MAX), over = Math.max(0, mine.length - SKY_MAX);
+    var box = el("div", "box skybox");
+
+    var svg = '<svg viewBox="0 0 100 52" role="img" aria-label="' +
+      T(lit + " of " + SKY_MAX + " stars", SKY_MAX + "개 중 " + lit + "개") + '">' +
+      '<defs><radialGradient id="g"><stop offset="0" stop-color="#F7D278" stop-opacity=".42"/>' +
+      '<stop offset=".45" stop-color="#F7D278" stop-opacity=".13"/>' +
+      '<stop offset="1" stop-color="#F7D278" stop-opacity="0"/></radialGradient></defs>' +
+      // a couple of brush strokes, so the sky moves
+      // long slow currents rather than spirals: at this size a spiral renders as
+      // a hook, and reads as a scribble
+      '<g fill="none" stroke="#6FA6D6" stroke-linecap="round">' +
+        '<path d="M-2 26q13-9 26-3t26-4 26 3 26-5" stroke-width="1.3" stroke-opacity=".17"/>' +
+        '<path d="M-2 38q15-7 29-1t27-6 28 2" stroke-width="1.05" stroke-opacity=".12"/>' +
+        '<path d="M-2 14q12-6 24-1t26-4 28 3" stroke-width="1" stroke-opacity=".10"/></g>';
+
+    SKY_POS.forEach(function (pt, i) {
+      var on = i < lit, b = mine[i];
+      svg += '<g class="star"' + (on ? ' data-i="' + i + '"' : '') + '>';
+      if (on) svg += '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="' + (pt[2] * 2.1) + '" fill="url(#g)"/>';
+      svg += '<path class="sp" d="' + sparkle(pt[0], pt[1], on ? pt[2] : pt[2] * 0.62) + '" fill="' +
+        (on ? "#F7D278" : "#8FB6D6") + '" opacity="' + (on ? 1 : .22) + '"/>';
+      if (on && b) svg += '<title>' + esc(b.title) + '</title>';
+      svg += '</g>';
+    });
+    svg += '</svg>';
+
+    var MON = ["January", "February", "March", "April", "May", "June", "July",
+               "August", "September", "October", "November", "December"];
+    var mn = new Date().getMonth();
+    box.innerHTML = svg +
+      '<div class="cap"><b>' + lit + '</b><span> / ' + SKY_MAX + ' \u00b7 ' +
+        T(MON[mn], (mn + 1) + "\uc6d4") + '</span></div>' +
+      '<p class="note" style="margin:0">' +
+        (over ? T("The sky is full, and " + over + " more besides.", "하늘이 가득 찼어요. 게다가 " + over + "권 더!")
+         : lit === SKY_MAX ? T("A full sky. Every star is a book you finished.", "가득 찬 하늘. 별 하나가 다 읽은 책이에요.")
+         : lit ? T("Tap a star to read what you wrote.", "별을 누르면 그때 쓴 글이 나와요.")
+         : T("Finish a book and the first star lights up.", "책 한 권을 끝내면 첫 별이 켜져요.")) +
+      '</p>';
+
+    Array.prototype.forEach.call(box.querySelectorAll(".star[data-i]"), function (g) {
+      g.onclick = function () {
+        var b = mine[parseInt(g.getAttribute("data-i"), 10)];
+        if (b) { S.report = b; renderReport(); show("report"); }
+      };
+    });
+    return box;
   }
 
   function statDetail(kind) {
