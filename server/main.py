@@ -627,6 +627,57 @@ def list_households(x_admin_code: str | None = Header(default=None)):
     return out
 
 
+class HousePatch(BaseModel):
+    name: str | None = None
+    code: str | None = None          # replacing it locks the old one out immediately
+    ai_cap: int | None = None
+    backup: bool | None = None
+
+
+@app.patch("/households/{hh}")
+def update_household(hh: int, req: HousePatch, x_admin_code: str | None = Header(default=None)):
+    admin(x_admin_code)
+    con = db()
+    row = con.execute("SELECT * FROM households WHERE hh=?", (hh,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such household")
+    name = (req.name or row["name"]).strip()[:60] or row["name"]
+    cap = req.ai_cap if req.ai_cap is not None else row["ai_cap"]
+    backup = int(req.backup) if req.backup is not None else row["backup"]
+    ch = row["code_hash"]
+    if req.code:
+        code = req.code.strip()
+        if len(code) < CODE_MIN:
+            raise HTTPException(400, "a join code needs at least %d characters" % CODE_MIN)
+        ch = code_hash(con, code)
+        clash = con.execute("SELECT hh FROM households WHERE code_hash=? AND hh<>?", (ch, hh)).fetchone()
+        if clash:
+            raise HTTPException(409, "that code is already in use")
+    con.execute("UPDATE households SET name=?, code_hash=?, ai_cap=?, backup=? WHERE hh=?",
+                (name, ch, max(1, int(cap)), backup, hh))
+    con.commit()
+    return {"ok": True}
+
+
+@app.delete("/households/{hh}")
+def delete_household(hh: int, purge: int = 0, x_admin_code: str | None = Header(default=None)):
+    """Everything that household ever wrote goes with it, so say so out loud."""
+    admin(x_admin_code)
+    con = db()
+    row = con.execute("SELECT * FROM households WHERE hh=?", (hh,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such household")
+    books = con.execute("SELECT COUNT(*) c FROM books WHERE hh=?", (hh,)).fetchone()["c"]
+    if books and not purge:
+        raise HTTPException(409, {"code": "has_books", "books": books,
+                                  "detail": "%s has %d books saved" % (row["name"], books)})
+    for t in ("books", "members", "settings", "ai_usage"):
+        con.execute("DELETE FROM %s WHERE hh=?" % t, (hh,))
+    con.execute("DELETE FROM households WHERE hh=?", (hh,))
+    con.commit()
+    return {"ok": True, "deleted_books": books}
+
+
 @app.get("/")
 def health():
     con = db()

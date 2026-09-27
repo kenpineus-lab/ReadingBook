@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#F7FAFC" />
+<title>Book Lab — 운영자</title>
+<style>
+  :root{
+    --bg:#F7FAFC; --panel:#FFFFFF; --line:#E6EEF4; --text:#26343E; --sub:#7C8D9A;
+    --sky:#4FB6E8; --skyTop:#72C9F0; --sea:#41C7A6; --sun:#FFC24D; --red:#FF7C8A;
+    --peri:#8C8DF0; --well:#F6FAFD; --chip:#EEF4F9; --on:#06293A;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#fff 0%,var(--bg) 40%,#EDF3F8 100%);
+    background-attachment:fixed;min-height:100vh;color:var(--text);
+    font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:24px 16px 80px}
+  h1{font-family:var(--serif);font-size:22px;letter-spacing:.1em;color:#3FA8DC;margin:0 0 2px}
+  .tag{font-family:var(--serif);font-style:italic;font-size:13px;color:#8FA0AC;
+    margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .box{background:#fff;border:1px solid #EAF1F6;border-radius:20px;padding:18px;margin-bottom:14px;
+    box-shadow:0 2px 5px -3px rgba(40,70,92,.09),0 14px 30px -22px rgba(40,70,92,.28)}
+  .lbl{font-size:10px;letter-spacing:.14em;color:var(--sub);font-weight:700;text-transform:uppercase;margin-bottom:12px}
+  label{display:block;font-size:11px;color:var(--sub);margin:12px 0 5px}
+  input{width:100%;padding:12px;border-radius:12px;background:var(--well);border:1px solid var(--line);
+    color:var(--text);font-size:15px;outline:none;font-family:inherit}
+  input:focus{border-color:var(--sky)}
+  .btn{border:none;border-radius:15px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;
+    font-family:inherit;width:100%;transition:transform .08s}
+  .btn:active{transform:scale(.985)}
+  .sky{background:linear-gradient(180deg,var(--skyTop),var(--sky));color:var(--on)}
+  .ghost{background:var(--chip);color:var(--text)}
+  .sm{border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:999px;
+    padding:7px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+  .sm:hover{border-color:var(--sub)}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .hh{border-top:1px solid var(--line);padding:14px 0}
+  .hh:first-of-type{border-top:none}
+  .hh h3{margin:0;font-size:16px;font-family:var(--serif)}
+  .meta{font-size:12px;color:var(--sub);margin-top:3px}
+  .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;
+    padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--sub);margin-left:7px}
+  .pill.on{background:var(--sea);color:#04372C}
+  .note{font-size:11.5px;color:var(--sub);line-height:1.65;margin:10px 0 0}
+  .bad{color:var(--red)}
+  .ok{color:#1E9E7E}
+  .invite{background:var(--well);border:1px dashed var(--sky);border-radius:14px;
+    padding:14px;margin-top:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;
+    letter-spacing:.06em;color:var(--on)}
+  .hide{display:none!important}
+  .spin{width:15px;height:15px;border:2px solid var(--sky);border-top-color:transparent;
+    border-radius:50%;animation:s 1s linear infinite;display:inline-block;vertical-align:-2px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BOOK LAB</h1>
+  <p class="tag">운영자 화면 — 가족을 만들고, 코드를 나눠 줍니다.</p>
+
+  <div id="gate" class="box hide">
+    <div class="lbl">운영자 코드</div>
+    <p class="note" style="margin:0 0 4px">Railway의 <b>ADMIN_CODE</b> 값입니다. 이 기기에만 저장됩니다.</p>
+    <label>서버 주소</label>
+    <input id="srv" placeholder="https://readingbook-production.up.railway.app" />
+    <label>ADMIN_CODE</label>
+    <input id="adm" type="password" placeholder="운영자 코드" autocomplete="off" />
+    <button id="enter" class="btn sky" style="margin-top:14px">들어가기</button>
+    <p id="gateErr" class="note bad hide"></p>
+  </div>
+
+  <div id="main" class="hide">
+    <div class="box">
+      <div class="row" style="justify-content:space-between">
+        <div class="lbl" style="margin:0">가족 목록</div>
+        <button id="refresh" class="sm">새로고침</button>
+      </div>
+      <div id="list" style="margin-top:12px"><span class="spin"></span></div>
+    </div>
+
+    <div class="box">
+      <div class="lbl">새 가족 만들기</div>
+      <label>가족 이름 <span style="color:#B9C6D0">— 나만 보는 이름이에요</span></label>
+      <input id="nName" placeholder="예: 지영이네" />
+      <label>참여 코드 <span style="color:#B9C6D0">— 그 집에 알려줄 코드</span></label>
+      <div class="row" style="flex-wrap:nowrap;gap:8px">
+        <input id="nCode" placeholder="코드" style="flex:1" />
+        <button id="gen" class="sm" style="white-space:nowrap">만들어줘</button>
+      </div>
+      <div class="row" style="margin-top:14px;gap:8px">
+        <button id="bkp" class="sm">☐ 깃헙 백업</button>
+        <button id="cap" class="sm">하루 AI 300회</button>
+      </div>
+      <p class="note">백업을 켜면 그 집 기록이 <b>내 깃헙 저장소</b>에 저장됩니다. 남의 집 아이 글이라면 먼저 물어보세요.</p>
+      <button id="create" class="btn sky" style="margin-top:14px">만들고 초대문 받기</button>
+      <p id="newErr" class="note bad hide"></p>
+      <div id="invite" class="invite hide"></div>
+      <button id="copy" class="btn ghost hide" style="margin-top:10px">초대문 복사하기</button>
+    </div>
+
+    <button id="out" class="btn ghost">운영자 코드 지우기</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var DEFAULT_SRV = "https://readingbook-production.up.railway.app";
+  var APP = location.origin + location.pathname.replace(/admin\.html?$/, "");
+  var srv = localStorage.getItem("bl:srv") || DEFAULT_SRV;
+  var adm = localStorage.getItem("bl:admin") || "";
+  var newBackup = false, newCap = 300;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  async function api(path, opts) {
+    var o = Object.assign({ headers: { "content-type": "application/json", "x-admin-code": adm } }, opts || {});
+    var r = await fetch(srv.replace(/\/$/, "") + path, o);
+    if (r.status === 401) throw new Error("운영자 코드가 맞지 않아요.");
+    if (!r.ok) {
+      var d = null;
+      try { d = (await r.json()).detail; } catch (e) { }
+      throw new Error(typeof d === "string" ? d : (d && d.detail) || ("서버 오류 " + r.status));
+    }
+    return r.json();
+  }
+
+  // A code someone has to read out over the phone. Two words and a number beats
+  // a random string every time.
+  var W1 = ["파랑", "노랑", "초록", "보라", "하양", "분홍", "주황", "민트"];
+  var W2 = ["여우", "수달", "고래", "부엉이", "판다", "토끼", "거북", "사슴"];
+  function makeCode() {
+    var a = W1[Math.floor(Math.random() * W1.length)];
+    var b = W2[Math.floor(Math.random() * W2.length)];
+    return a + b + (1000 + Math.floor(Math.random() * 9000));
+  }
+
+  function show(which) {
+    $("gate").classList.toggle("hide", which !== "gate");
+    $("main").classList.toggle("hide", which === "gate");
+  }
+
+  async function load() {
+    $("list").innerHTML = '<span class="spin"></span>';
+    try {
+      var hs = await api("/households");
+      if (!hs.length) { $("list").innerHTML = '<p class="note" style="margin:0">아직 없어요. 아래에서 첫 가족을 만들어 보세요.</p>'; return; }
+      $("list").innerHTML = hs.map(function (h) {
+        return '<div class="hh"><div class="row" style="justify-content:space-between">' +
+          '<h3>' + esc(h.name) + (h.backup ? '<span class="pill on">백업</span>' : '') + '</h3>' +
+          '<div class="row" style="gap:6px">' +
+            '<button class="sm" data-act="code" data-hh="' + h.hh + '" data-name="' + esc(h.name) + '">코드 바꾸기</button>' +
+            '<button class="sm" data-act="del" data-hh="' + h.hh + '" data-name="' + esc(h.name) + '" data-books="' + h.books + '">지우기</button>' +
+          '</div></div>' +
+          '<div class="meta">읽는 사람 ' + h.readers + '명 · 책 ' + h.books + '권 · ' +
+          '오늘 AI ' + h.ai_today + '/' + h.ai_cap + '회 · ' + esc(h.created) + ' 시작</div></div>';
+      }).join("");
+      Array.prototype.forEach.call($("list").querySelectorAll("button[data-act]"), function (b) {
+        b.onclick = function () { rowAction(b.getAttribute("data-act"), b); };
+      });
+    } catch (e) {
+      $("list").innerHTML = '<p class="note bad" style="margin:0">' + esc(e.message) + '</p>';
+      if (/코드가 맞지/.test(e.message)) { show("gate"); $("gateErr").textContent = e.message; $("gateErr").classList.remove("hide"); }
+    }
+  }
+
+  async function rowAction(act, b) {
+    var hh = b.getAttribute("data-hh"), name = b.getAttribute("data-name");
+    if (act === "code") {
+      var next = prompt(name + " 의 새 참여 코드를 정해 주세요.\n(예전 코드는 즉시 못 쓰게 됩니다)", makeCode());
+      if (!next) return;
+      try { await api("/households/" + hh, { method: "PATCH", body: JSON.stringify({ code: next.trim() }) }); showInvite(name, next.trim()); load(); }
+      catch (e) { alert(e.message); }
+      return;
+    }
+    var books = parseInt(b.getAttribute("data-books") || "0", 10);
+    var warn = books
+      ? name + " 를 지우면 저장된 책 " + books + "권과 독후감이 전부 사라집니다.\n되돌릴 수 없습니다. 정말 지울까요?"
+      : name + " 를 지울까요?";
+    if (!confirm(warn)) return;
+    if (books && !confirm("마지막 확인입니다. " + books + "권을 영구히 지웁니다.")) return;
+    try { await api("/households/" + hh + (books ? "?purge=1" : ""), { method: "DELETE" }); load(); }
+    catch (e) { alert(e.message); }
+  }
+
+  function showInvite(name, code) {
+    var text =
+      "📖 Book Lab 초대\n\n" +
+      "1. 이 주소를 여세요 — " + APP + "\n" +
+      "2. 가족 코드에 " + code + " 를 입력하고 저장\n" +
+      "3. ＋ 를 눌러 읽는 사람을 추가하면 끝이에요\n\n" +
+      "책 표지를 찍으면 AI가 퀴즈를 내고, 독후감을 같이 씁니다.\n" +
+      "AI는 그 책을 읽지 않았으니 가끔 틀립니다 — 그걸 잡아내는 게 재미예요.";
+    $("invite").classList.remove("hide");
+    $("invite").innerHTML = '<b>' + esc(name) + '</b> 준비됐어요. 참여 코드:<br><span class="code">' + esc(code) + '</span>\n\n' + esc(text);
+    $("copy").classList.remove("hide");
+    $("copy").onclick = async function () {
+      try { await navigator.clipboard.writeText(text); $("copy").textContent = "복사했어요!"; setTimeout(function () { $("copy").textContent = "초대문 복사하기"; }, 1600); }
+      catch (e) { alert("이 기기에서는 복사가 안 돼요. 위 글을 길게 눌러 직접 복사해 주세요."); }
+    };
+    $("invite").scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  // ---- gate
+  $("srv").value = srv;
+  $("enter").onclick = async function () {
+    srv = ($("srv").value.trim() || DEFAULT_SRV).replace(/\/$/, "");
+    adm = $("adm").value.trim();
+    if (!adm) { $("adm").focus(); return; }
+    $("gateErr").classList.add("hide");
+    try {
+      await api("/households");
+      localStorage.setItem("bl:srv", srv); localStorage.setItem("bl:admin", adm);
+      show("main"); load();
+    } catch (e) {
+      $("gateErr").textContent = e.message; $("gateErr").classList.remove("hide");
+    }
+  };
+  $("adm").onkeydown = function (e) { if (e.key === "Enter") $("enter").click(); };
+  $("out").onclick = function () { localStorage.removeItem("bl:admin"); adm = ""; $("adm").value = ""; show("gate"); };
+  $("refresh").onclick = load;
+
+  // ---- new household
+  $("gen").onclick = function () { $("nCode").value = makeCode(); };
+  $("bkp").onclick = function () {
+    newBackup = !newBackup;
+    $("bkp").textContent = (newBackup ? "☑" : "☐") + " 깃헙 백업";
+    $("bkp").style.borderColor = newBackup ? "var(--sea)" : "var(--line)";
+    $("bkp").style.color = newBackup ? "#1E9E7E" : "var(--sub)";
+  };
+  $("cap").onclick = function () {
+    var caps = [100, 300, 1000];
+    newCap = caps[(caps.indexOf(newCap) + 1) % caps.length];
+    $("cap").textContent = "하루 AI " + newCap + "회";
+  };
+  $("create").onclick = async function () {
+    var name = $("nName").value.trim(), code = $("nCode").value.trim();
+    $("newErr").classList.add("hide");
+    if (!name) { $("nName").focus(); return; }
+    if (code.length < 6) { $("newErr").textContent = "코드는 6자 이상이어야 해요."; $("newErr").classList.remove("hide"); $("nCode").focus(); return; }
+    try {
+      await api("/households", { method: "POST", body: JSON.stringify({ name: name, code: code, backup: newBackup, ai_cap: newCap }) });
+      showInvite(name, code);
+      $("nName").value = ""; $("nCode").value = "";
+      load();
+    } catch (e) { $("newErr").textContent = e.message; $("newErr").classList.remove("hide"); }
+  };
+
+  if (adm) { show("main"); load(); } else { show("gate"); }
+})();
+</script>
+</body>
+</html>
