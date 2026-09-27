@@ -40,6 +40,11 @@ comes with selling this, not before.
 | child      | ✅        | ✅     | ❌            | ❌               | ❌          |
 | adult      | ✅        | ✅     | ✅            | ✅               | ✅          |
 
+Claiming a device is reversible: the switcher shows "this device is X's · change", behind the
+PIN once one exists. It was a one-way door at first and the owner locked themselves into a
+child's view with no way out — any setting that changes what a person can see needs its own way
+back on the same screen.
+
 A child's device does not *hide* those controls, it does not render them — `amAdult()` gates
 the switcher down to their own chip plus Family. The server enforces the same rules
 independently (`actor()` / `require_adult()`); never rely on the page alone.

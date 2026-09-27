@@ -651,8 +651,8 @@
     var h = el("div", null, T("Whose device is this?", "이 기기는 누구 거예요?"));
     h.style.cssText = "font-size:12px;font-weight:700;margin-bottom:4px";
     box.appendChild(h);
-    var note = el("p", "note", T("Asked once. It decides whose shelf this device saves to.",
-                                 "한 번만 물어봐요. 이 기기가 누구 책장에 저장할지 정해져요."));
+    var note = el("p", "note", T("This device saves to their shelf. Choosing a child also hides the grown-up parts.",
+                                 "이 기기는 그 사람 책장에 저장해요. 아이를 고르면 어른 기능은 숨겨져요."));
     note.style.margin = "0 0 10px";
     box.appendChild(note);
     var g = el("div"); g.style.cssText = "display:flex;flex-wrap:wrap;gap:7px";
@@ -662,7 +662,9 @@
       b.onclick = function () {
         cfg.who = pr.id; localStorage.setItem("bl:who", pr.id);
         cfg.profile = pr.id; localStorage.setItem("bl:profile", pr.id);
-        S.claiming = false; renderWho(); renderLibrary(); loadBooks();
+        // show() is what re-evaluates the header, so the grown-up button comes
+        // back when this device stops being a child's
+        S.claiming = false; renderWho(); renderLibrary(); show("library"); loadBooks();
       };
       g.appendChild(b);
     });
@@ -711,6 +713,29 @@
 
     w.appendChild(row);
     if (S.claiming) { w.appendChild(claimPanel()); return; }
+
+    if (cfg.who) {
+      var meM = who(ME());
+      var line = el("div");
+      line.style.cssText = "font-size:10.5px;color:var(--sub);margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:wrap";
+      line.innerHTML = '<span>' + T("This device is ", "이 기기는 ") + meM.icon + " " +
+        esc(meM.name) + T("'s", " 거") + '</span>';
+      var sw = el("button", "sm", T("change", "바꾸기"));
+      sw.style.cssText = "padding:4px 10px;font-size:10.5px;color:var(--sub);background:transparent;border:1px solid var(--line)";
+      sw.onclick = async function () {
+        // With a grown-up code set, changing whose device this is needs it -
+        // otherwise a child could hand themselves the grown-up screen.
+        if (S.hasPin) {
+          var v = prompt(T("Grown-up code", "어른 코드"));
+          if (!v) return;
+          try { await api("/pin/check", { method: "POST", body: JSON.stringify({ pin: v.trim() }) }); setPin(v.trim()); }
+          catch (e) { fail(e, T("That code doesn't match.", "코드가 맞지 않아요.")); return; }
+        }
+        S.claiming = true; renderWho();
+      };
+      line.appendChild(sw);
+      w.appendChild(line);
+    }
     if (S.editing) w.appendChild(personPanel(S.editing));
     if (amAdult() && !S.hasPin && PROFILES.length > 1) {
       var nag = el("button", "sm", "\ud83d\udd12 " + T("Set a grown-up code", "어른 코드 만들기"));
