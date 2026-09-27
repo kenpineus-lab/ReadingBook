@@ -3,3 +3,6 @@ __pycache__/
 *.db
 .env
 .DS_Store
+
+# the brief this repo started from, kept locally
+CLAUDE_CODE_TASK.md
