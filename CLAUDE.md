@@ -135,6 +135,14 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
 - **AI calls:** `ai(system, messages, maxTokens)` → `POST {server}/ai`. The server proxies to Anthropic. Responses are parsed with `tag()` / `kv()` / `blocks()` — a tag-and-key:value format chosen because JSON from the model breaks on quotes and newlines. Keep that format; don't switch to JSON.
 - **Flow:**
   1. Photo → `onPhoto` → vision call returns `<book>title/author/language</book>` → `startQuiz()` immediately.
+     **Or `fromTitle()`** — an e-book has no cover to photograph and a library book goes back
+     before anyone writes about it, so typing the title is a first-class way in, not a
+     consolation prize after the camera fails. One short call resolves a half-remembered title
+     into a real book, guarded by `sameBook()`: a title that has nothing to do with what was
+     typed is discarded and the typed text kept. "investigators ants" once came back as *The
+     Naked Ape*, with reasoning, and the first `<book>` block won. Hangul in the typed text
+     also pins the language to Korean — asked in Korean the model likes to hand back the
+     English title, and then the entire quiz arrives in English.
   2. `startQuiz` asks for `<meta>genre/kind</meta>` + five `<q>` blocks each with `mypick` (what the AI thinks) and `sure`.
   3. `makeFollowups` → three `<fq>` feelings questions. `reroll()` regenerates choices.
   4. `renderPlan` → Henry picks audience (teacher/friend/me) and taps sections in order. "Just write it" skips.

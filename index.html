@@ -811,16 +811,27 @@
     var b = el("div", "box");
     b.innerHTML = '<button id="photo" class="big amber">📷 Take a photo of your book</button>' +
       '<input id="file" type="file" accept="image/*" capture="environment" class="hide" />' +
+      '<button id="byTitle" class="dash" style="margin-top:9px">\u270f\ufe0f ' +
+        T("Or start from the title", "제목으로 시작하기") + '</button>' +
       '<div id="coverBox" class="cover hide"><img id="coverImg" alt=""/><div style="flex:1;min-width:0"><div id="cTitle" style="font-size:15px;font-weight:800"></div><div id="cAuthor" style="font-size:12px;color:var(--sub)"></div></div></div>' +
-      '<div id="manual" class="hide" style="margin-top:12px"><input id="mtitle" placeholder="Type the book title" style="margin-bottom:8px"/><div style="display:flex;gap:8px"><button id="mko" class="sm">한글책</button><button id="men" class="sm">English</button><button id="mgo" class="big amber" style="flex:1;padding:10px;font-size:13px">Go</button></div></div>' +
+      '<div id="manual" class="hide" style="margin-top:12px">' +
+        '<input id="mtitle" placeholder="' + T("Book title", "책 제목") + '" style="margin-bottom:8px"/>' +
+        '<div style="display:flex;gap:8px"><button id="mgo" class="big amber" style="flex:1;padding:12px;font-size:13.5px">' +
+          T("Find this book", "이 책 찾기") + '</button></div>' +
+        '<p class="note" style="margin-top:8px">' +
+          T("For an e-book, or one that has already gone back to the library.",
+            "e북이거나, 이미 도서관에 반납한 책일 때 써요.") + '</p></div>' +
       '<button id="start" class="big green hide" style="margin-top:12px">Start with this book ›</button>';
     L.appendChild(b);
     $("photo").onclick = function () { $("file").click(); };
     $("file").onchange = onPhoto;
     $("start").onclick = function () { startQuiz(); };
-    $("mko").onclick = function () { S.lang = "ko"; $("mko").style.color = "var(--amber)"; $("men").style.color = ""; };
-    $("men").onclick = function () { S.lang = "en"; $("men").style.color = "var(--amber)"; $("mko").style.color = ""; };
-    $("mgo").onclick = function () { var t = $("mtitle").value.trim(); if (!t) return; S.title = t; S.author = ""; S.lang = S.lang || "en"; startQuiz(); };
+    $("byTitle").onclick = function () {
+      var m = $("manual"); m.classList.toggle("hide");
+      if (!m.classList.contains("hide")) $("mtitle").focus();
+    };
+    $("mgo").onclick = fromTitle;
+    $("mtitle").onkeydown = function (e) { if (e.key === "Enter") fromTitle(); };
     if (S.title) showCover();
     }
 
@@ -1112,12 +1123,57 @@
 
   function showCover() {
     $("coverBox").classList.remove("hide");
+    $("coverImg").classList.toggle("hide", !S.cover);
     if (S.cover) $("coverImg").src = S.cover; else $("coverImg").removeAttribute("src");
     $("cTitle").textContent = S.title || "…"; $("cAuthor").textContent = S.author || "";
     $("start").classList.toggle("hide", !S.title);
   }
 
   // ---------- photo → title
+  // Typed titles are rough - "wimpy kid", a half-remembered one, a Korean title
+  // in a hurry. One short call turns that into a book with an author, and if it
+  // can't, we use exactly what they typed rather than stopping them.
+  function sameBook(typed, got) {
+    var norm = function (x) {
+      return String(x || "").toLowerCase().replace(/[^0-9a-z\uac00-\ud7a3]+/g, " ").replace(/\s+/g, " ").trim();
+    };
+    var a = norm(typed), c = norm(got);
+    if (!a || !c) return false;
+    if (c.indexOf(a) >= 0 || a.indexOf(c) >= 0) return true;
+    return a.split(" ").some(function (w) { return w.length >= 3 && c.indexOf(w) >= 0; });
+  }
+
+  async function fromTitle() {
+    if (S.working) return;
+    var typed = $("mtitle").value.trim();
+    if (!typed) { $("mtitle").focus(); return; }
+    S.title = typed; S.author = ""; S.cover = null; S.thumb = null;
+    S.lang = /[\uac00-\ud7a3]/.test(typed) ? "ko" : "en";   // Hangul means Korean
+    err(""); busy(T("Looking for that book...", "그 책을 찾는 중..."));
+    try {
+      var raw = await ai('Someone typed a book title from memory: "' + typed + '"\nName the book they mean.\n\nAnswer with the block and nothing else - no reasoning, no alternatives, exactly one block. Give the title in the same language they typed it in; do not translate it. If you are not confident which book it is, repeat exactly what they typed and put unknown for the author.\n\n<book>\ntitle: (the title)\nauthor: (the author, or unknown)\nlanguage: (en or ko)\n</book>',
+        [{ role: "user", content: "Which book is this?" }], 150);
+      var b = kv(tag(raw, "book"));
+      // A confident wrong answer is worse than none: "investigators ants" came
+      // back as The Naked Ape, with reasoning, and the first block won. Take the
+      // title only if it still has something to do with what they typed.
+      if (b && b.title && b.title.toLowerCase() !== "unknown" && sameBook(typed, b.title)) {
+        S.title = b.title;
+        S.author = (b.author && b.author.toLowerCase() !== "unknown") ? b.author : "";
+        // Hangul in, Korean out. Asked in Korean it likes to hand back the
+        // English title, and then the whole quiz comes back in English.
+        if (!/[\uac00-\ud7a3]/.test(typed)) {
+          S.lang = (b.language || S.lang).toLowerCase().indexOf("ko") === 0 ? "ko" : "en";
+        }
+      }
+    } catch (x) {
+      if (x && x.code) { busy(""); return fail(x, ""); }     // a real outage, not a miss
+    }
+    busy("");
+    showCover();                                              // no photo: title and author only
+    return startQuiz();
+  }
+
   async function onPhoto(e) {
     if (S.working) return;
     var f = e.target.files && e.target.files[0]; if (!f) return;
