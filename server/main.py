@@ -571,6 +571,101 @@ def list_books(profile: str | None = None, x_family_code: str | None = Header(de
     return out
 
 
+OL_SEARCH = "https://openlibrary.org/search.json"
+OL_COVER = "https://covers.openlibrary.org/b/id/%d-M.jpg"
+
+
+def _flat(s) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+@app.get("/coverlookup")
+async def cover_lookup(title: str, author: str | None = None,
+                       x_family_code: str | None = Header(default=None)):
+    """A book nobody could photograph - an e-book, or one already back at the
+    library - still usually has a cover somewhere. Open Library has it for free
+    and without a key.
+
+    It also has other books with similar names, and on a third grader's shelf a
+    wrong cover is worse than none, so the match is deliberately unforgiving:
+    the title that comes back has to be the typed title word for word. Anything
+    looser was wrong in practice - "Captain" found Captains Courageous, and
+    "Diary of an 8-Bit Warrior" found volume 5, which is a different book.
+
+    Two real books can still share a title - Wings of Fire is a dragon series
+    and also Abdul Kalam's memoir - so the author decides, and with no author to
+    go on an ambiguous title gets no cover at all.
+
+    A miss returns null rather than an error: not finding a cover is the normal
+    case and must never interrupt a run."""
+    house(x_family_code)
+    want = _flat(title).split()
+    if not want:
+        return {"cover": None}
+    try:
+        async with httpx.AsyncClient(timeout=7, follow_redirects=True) as c:
+            r = await c.get(OL_SEARCH, params={"title": title, "limit": 10,
+                                               "fields": "title,author_name,cover_i"})
+            docs = r.json().get("docs", []) if r.status_code == 200 else []
+            hits = [d for d in docs
+                    if d.get("cover_i") and _flat(d.get("title")).split() == want]
+            if author:
+                a = _flat(author)
+                hits = [d for d in hits
+                        if any(a == _flat(x) or a in _flat(x) or _flat(x) in a
+                               for x in (d.get("author_name") or []))]
+            elif len({_flat((d.get("author_name") or [""])[0]) for d in hits}) > 1:
+                hits = []
+            for d in hits:
+                img = await c.get(OL_COVER % int(d["cover_i"]))
+                # a cover Open Library does not actually hold answers 200 with a 1x1
+                if img.status_code != 200 or len(img.content) < 3000:
+                    continue
+                raw = "data:image/jpeg;base64," + base64.b64encode(img.content).decode("ascii")
+                return {"cover": _resize(raw, COVER_MAX, 82) or raw,
+                        "title": d.get("title"),
+                        "author": (d.get("author_name") or [None])[0]}
+    except Exception:
+        pass
+    return {"cover": None}
+
+
+@app.post("/books/{book_id}/cover")
+def set_cover(book_id: int, body: dict, profile: str | None = None,
+              x_family_code: str | None = Header(default=None),
+              x_reader: str | None = Header(default=None)):
+    """Attach the photo to a book that was logged without one. A narrow endpoint
+    rather than a re-save of the whole book, so a cover can never cost a report."""
+    con, hh = house(x_family_code)
+    me = actor(con, hh["hh"], x_reader)
+    p = prof(con, hh["hh"], profile, me["id"] if me else None)
+    if me and not me["is_adult"] and me["id"] != p:
+        raise HTTPException(403, {"code": "not_your_shelf", "detail": "that's someone else's shelf"})
+    r = con.execute("SELECT data FROM books WHERE hh=? AND profile=? AND id=?",
+                    (hh["hh"], p, book_id)).fetchone()
+    if not r:
+        raise HTTPException(404, "no such book")
+    d = json.loads(r["data"])
+    cov = (body or {}).get("cover") or ""
+    if cov:
+        # derived from what just arrived, never from what was already stored: a
+        # book being re-covered already has a thumbnail, and trusting that one
+        # let unreadable bytes replace a good cover while the old thumb stayed.
+        small = _resize(cov, COVER_MAX, 82) or cov
+        thumb = _resize(small, THUMB_MAX, 72)
+        if not thumb:
+            raise HTTPException(400, {"code": "bad_image",
+                                      "detail": "that image could not be read"})
+        d["cover"], d["thumb"] = small, thumb
+    else:
+        d.pop("cover", None)
+        d.pop("thumb", None)
+    con.execute("UPDATE books SET cover=?, data=? WHERE hh=? AND profile=? AND id=?",
+                (d.get("cover"), json.dumps(d, ensure_ascii=False), hh["hh"], p, book_id))
+    con.commit()
+    return {"ok": True, "thumb": d.get("thumb")}
+
+
 @app.get("/books/{book_id}/cover")
 def book_cover(book_id: int, profile: str | None = None, x_family_code: str | None = Header(default=None),
                x_reader: str | None = Header(default=None)):

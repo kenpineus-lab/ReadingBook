@@ -156,8 +156,16 @@
   .stars .c{font-size:10px;color:var(--sub);width:14px;text-align:right}
 
   .book{display:flex;gap:9px;padding:13px 0;border-bottom:1px solid var(--line);align-items:center}
-  .book img,.book .ph{width:38px;height:52px;border-radius:7px;object-fit:cover;flex-shrink:0;
+  .book img{width:38px;height:52px;border-radius:7px;object-fit:cover;flex-shrink:0;
     background:var(--well);box-shadow:0 3px 10px -6px rgba(var(--shadow),.6)}
+  /* A book logged by typing its title has no photo. An empty box reads as
+     broken, so draw a small clothbound cover instead - the colour comes from
+     the title, so one book is always the same colour wherever it appears. */
+  .gc{display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    position:relative;overflow:hidden;box-shadow:0 3px 10px -6px rgba(var(--shadow),.6)}
+  .gc>i{position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,.3)}
+  .gc>b{font-family:var(--serif);font-weight:800;color:#fff;line-height:1;
+    letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.28)}
   .book .t{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .book .m{font-size:11px;color:var(--sub);margin-top:1px}
   .book .w{font-size:11px;color:var(--violet);margin-top:2px;font-weight:600}
@@ -468,7 +476,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, page: 0, iq: null, ipick: null, ireason: null, intent: null, editing: null, claiming: false, hasPin: false, working: false, pkid: null, insight: null, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, page: 0, iq: null, ipick: null, ireason: null, intent: null, editing: null, claiming: false, hasPin: false, working: false, pkid: null, insight: null, editingId: null, editBase: null, asProfile: null, report0: null, coverFor: null };
 
   // ---------- server
   // What the reader is told when the machine behind the machine says no.
@@ -812,6 +820,7 @@
     var b = el("div", "box");
     b.innerHTML = '<button id="photo" class="big amber">📷 Take a photo of your book</button>' +
       '<input id="file" type="file" accept="image/*" capture="environment" class="hide" />' +
+      '<input id="cfile" type="file" accept="image/*" capture="environment" class="hide" />' +
       '<button id="byTitle" class="dash" style="margin-top:9px">\u270f\ufe0f ' +
         T("Or start from the title", "제목으로 시작하기") + '</button>' +
       '<div id="coverBox" class="cover hide"><img id="coverImg" alt=""/><div style="flex:1;min-width:0"><div id="cTitle" style="font-size:15px;font-weight:800"></div><div id="cAuthor" style="font-size:12px;color:var(--sub)"></div></div></div>' +
@@ -826,6 +835,7 @@
     L.appendChild(b);
     $("photo").onclick = function () { $("file").click(); };
     $("file").onchange = onPhoto;
+    $("cfile").onchange = onLateCover;
     $("start").onclick = function () { startQuiz(); };
     $("byTitle").onclick = function () {
       var m = $("manual"); m.classList.toggle("hide");
@@ -900,7 +910,7 @@
         (pages > 1 ? ' <span style="color:var(--amber)">\u00b7 ' + (from + 1) + '\u2013' + (from + slice.length) + '</span>' : '') + '</div>';
       slice.forEach(function (x) {
         var r = el("div", "book");
-        r.innerHTML = (x.thumb ? '<img src="' + x.thumb + '" alt=""/>' : '<div class="ph"></div>') +
+        r.innerHTML = coverHTML(x) +
           '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (isFamily() ? who(x.profile).icon + ' ' + esc(who(x.profile).name) + ' · ' : '') + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
         var rb = el("button", "sm", "Report"); rb.style.color = "var(--amber)"; rb.onclick = function () { S.report = x; renderReport(); show("report"); };
         var eb = el("button", "sm", "✎"); eb.style.color = "var(--violet)"; eb.title = "Revise this report";
@@ -915,6 +925,7 @@
           catch (e) { fail(e, T("Couldn't remove it.", "못 지웠어요.")); }
           loadBooks();
         };
+        tapToAdd(r, x);
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
       if (pages > 1) {
@@ -941,7 +952,7 @@
 
   function bookLine(x) {
     var r = el("div", "row2");
-    r.innerHTML = (x.thumb ? '<img src="' + x.thumb + '" style="width:30px;height:41px;object-fit:cover;border-radius:3px;flex-shrink:0" alt=""/>' : '') +
+    r.innerHTML = coverHTML(x, 30, 41, 4) +
       '<div style="flex:1;min-width:0"><h6>' + esc(x.title) + '</h6>' +
       '<div class="mini">' + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div></div>';
     var b = el("button", "sm", (isFamily() ? who(x.profile).icon + " " : "") + "Report"); b.style.cssText = "color:var(--amber);align-self:center";
@@ -1145,6 +1156,74 @@
     P2.appendChild(back);
   }
 
+  // ---------- covers
+  function coverHue(s) {
+    var h = 7; s = s || "";
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+    return h;
+  }
+  function coverLetters(t) {
+    t = (t || "").trim();
+    if (/[\uac00-\ud7a3]/.test(t)) return t.replace(/[^\uac00-\ud7a3]/g, "").slice(0, 1) || "\ucc45";
+    var w = t.split(/\s+/).filter(function (x) { return x && !/^(the|a|an|of|and|in|on|to|is)$/i.test(x); });
+    return (((w[0] || t).charAt(0) || "") + ((w[1] || "").charAt(0) || "")).toUpperCase() || "?";
+  }
+  function coverHTML(x, w, h, rad) {
+    w = w || 38; h = h || 52; rad = rad == null ? 7 : rad;
+    var dim = "width:" + w + "px;height:" + h + "px;border-radius:" + rad + "px";
+    var src = x.thumb || x.cover;
+    if (src) return '<img src="' + src + '" style="' + dim + ';object-fit:cover;flex-shrink:0" alt=""/>';
+    var hue = coverHue(x.title);
+    return '<div class="gc" style="' + dim + ';background:linear-gradient(145deg,hsl(' + hue +
+      ',58%,68%),hsl(' + ((hue + 22) % 360) + ',52%,50%))"><i></i><b style="font-size:' +
+      Math.round(h * 0.3) + 'px">' + esc(coverLetters(x.title)) + '</b></div>';
+  }
+  function mayEdit(b) { return (b.profile || "") === ME() || amAdult(); }
+  // a drawn cover is also the way in to replacing it with the real one
+  function tapToAdd(root, b) {
+    var gc = root.querySelector(".gc");
+    if (!gc || !mayEdit(b)) return null;
+    gc.style.cursor = "pointer";
+    gc.title = T("Add the cover photo", "\ud45c\uc9c0 \uc0ac\uc9c4 \ucd94\uac00");
+    gc.onclick = function (e) { e.stopPropagation(); askCover(b); };
+    return gc;
+  }
+  function askCover(b) {
+    if (!b || !mayEdit(b)) return;
+    S.coverFor = b;
+    var inp = $("cfile"); inp.value = ""; inp.click();
+  }
+  async function onLateCover(e) {
+    var f = e.target.files && e.target.files[0], b = S.coverFor;
+    if (!f || !b) return;
+    err(""); busy(T("Saving the cover...", "\ud45c\uc9c0\ub97c \uc800\uc7a5\ud558\ub294 \uc911..."));
+    try {
+      var shot = await shrink(f, 1024, 0.82);
+      await api("/books/" + b.id + "/cover?profile=" + encodeURIComponent(b.profile || P()),
+        { method: "POST", body: JSON.stringify({ cover: "data:image/jpeg;base64," + shot.b64 }) });
+      await loadBooks();
+      // the open report is holding the old copy of this book
+      var fresh = S.books.filter(function (z) { return z.id === b.id; })[0];
+      if (fresh && S.report && S.report.id === b.id) { S.report = fresh; renderReport(); }
+    } catch (x) { fail(x, T("Couldn't save that cover.", "\ud45c\uc9c0\ub97c \uc800\uc7a5\ud558\uc9c0 \ubabb\ud588\uc5d0\uc694.")); }
+    busy("");
+  }
+
+  // Open Library often has the cover for a book that could not be photographed.
+  // The server only answers on the exact title and author, because a wrong cover
+  // on a child's shelf is worse than none. A miss is silent and the run goes on.
+  async function findCover() {
+    if (S.cover || !S.title) return;
+    try {
+      var r = await api("/coverlookup?title=" + encodeURIComponent(S.title) +
+                        (S.author ? "&author=" + encodeURIComponent(S.author) : ""));
+      if (r && r.cover) {
+        S.cover = r.cover;
+        if (!S.author && r.author) S.author = r.author;
+      }
+    } catch (x) { }
+  }
+
   function showCover() {
     $("coverBox").classList.remove("hide");
     $("coverImg").classList.toggle("hide", !S.cover);
@@ -1193,8 +1272,10 @@
     } catch (x) {
       if (x && x.code) { busy(""); return fail(x, ""); }     // a real outage, not a miss
     }
+    busy(T("Looking for the cover...", "\ud45c\uc9c0\ub97c \ucc3e\ub294 \uc911..."));
+    await findCover();                       // nothing to photograph: try to find one
     busy("");
-    showCover();                                              // no photo: title and author only
+    showCover();
     return startQuiz();
   }
 
@@ -1664,13 +1745,21 @@
   function renderReport() {
     var b = S.report, r = b.report || {}, R = $("report"); R.innerHTML = "";
     var box = el("div", "box");
-    box.innerHTML = '<div class="head" style="display:flex;gap:13px">' + ((b.thumb || b.cover) ? '<img src="' + (b.thumb || b.cover) + '" style="width:62px;height:86px;object-fit:cover;border-radius:7px" alt=""/>' : '') +
+    box.innerHTML = '<div class="head" style="display:flex;gap:13px">' + coverHTML(b, 62, 86, 7) +
       '<div style="flex:1;min-width:0"><div style="font-size:10px;color:var(--sub);letter-spacing:.12em">BOOK REPORT</div><div style="font-size:17px;font-weight:900;line-height:1.25;margin-top:3px">' + esc(b.title) + '</div>' +
-      (b.author ? '<div style="font-size:12px;color:var(--sub)">' + esc(b.author) + '</div>' : '') + '<div style="font-size:11px;color:var(--sub);margin-top:5px">Finished ' + esc(b.date) + '</div><div style="font-size:15px;color:var(--gold);margin-top:3px">' + stars(r.stars) + '</div></div></div>' +
+      (b.author ? '<div style="font-size:12px;color:var(--sub)">' + esc(b.author) + '</div>' : '') + '<div style="font-size:11px;color:var(--sub);margin-top:5px">Finished ' + esc(b.date) + '</div><div style="font-size:15px;color:var(--gold);margin-top:3px">' + stars(r.stars) + '</div><span id="addcov"></span></div></div>' +
       '<div class="essay">' +
       ((b.order && b.order.length) ? b.order : SECTIONS.map(function (x) { return x[0]; }))
         .map(function (k) { return r[k]; }).filter(Boolean)
         .map(function (t) { return '<p>' + esc(t) + '</p>'; }).join("") + '</div>';
+    if (tapToAdd(box, b)) {
+      // tapping the drawn cover works, but nobody would guess it, so say it,
+      // beside the book rather than under the essay where it reads as writing
+      var addc = el("button", "sm", "\ud83d\udcf7 " + T("Add the cover photo", "\ud45c\uc9c0 \uc0ac\uc9c4 \ucd94\uac00"));
+      addc.style.cssText = "margin-top:8px;color:var(--amber);padding:6px 10px;font-size:11px";
+      addc.onclick = function () { askCover(b); };
+      box.querySelector("#addcov").appendChild(addc);   // box is not in the document yet
+    }
     R.appendChild(box);
 
     var sc = el("div", "box");

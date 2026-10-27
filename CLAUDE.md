@@ -202,6 +202,11 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
 - `GET/POST /profiles` — per-person display settings (currently just the icon) in a `settings`
   key/value table. The icon is validated as a short label: 1-12 chars, no whitespace, no control
   characters. It is never interpolated anywhere as HTML without `esc()`.
+- `GET /coverlookup?title=&author=` — Open Library, for a book nobody could photograph.
+  Returns `{cover: null}` on a miss, never an error: not finding a cover is the normal case
+  and must never interrupt a run.
+- `POST /books/{id}/cover` — attach the photo to a book logged without one. Deliberately
+  narrow: a re-save of the whole book would let a cover cost a report.
 - `GET/POST /books`, `DELETE /books/{id}` — SQLite at `DB_PATH` (default `/data/booklab.db`; Railway volume must be mounted at `/data`). Rows are keyed on `(profile, id)`; reads and deletes take `?profile=`, writes take it in the body. An unknown profile is a 400.
 - `_ensure_schema` migrates in place on every connect: v1 (no profile column) → all rows become `henry`; v2 → the old `test` profile becomes `han`. Both are idempotent.
 - `POST /backup` + a daily loop → commits `henry-books.json` (covers stripped) to `GITHUB_REPO` using `GITHUB_TOKEN`.
@@ -264,6 +269,36 @@ Env: `ANTHROPIC_API_KEY`, `FAMILY_CODE`, `ALLOWED_ORIGIN`, `DB_PATH`, `GITHUB_TO
   `xml.dom.minidom` before committing it.
 - Artwork lives in `assets/` as real files, not data URIs — they are same-origin on Pages and stay editable. The palette is warm library (leather, paper cream, gilt); no flat yellow.
 - `.hide` must stay `display:none!important` — `.cover{display:flex}` is defined after it and used to win.
+
+### Covers, when there is no photograph
+
+Typing the title is a first-class way in, so plenty of books have no cover photo — five of
+Henry's first forty-three. They used to draw an empty grey box, which reads as broken.
+
+1. **`coverHTML()` draws a stand-in** — a small clothbound cover, its colour hashed from the
+   title so one book is always the same colour everywhere it appears, with the title's
+   initials (first Hangul syllable for Korean). Used by the library list, the parent's list
+   and the report header; there is no longer any `.ph` empty box.
+2. **`findCover()` asks Open Library** on the typed-title path, so a real cover often appears
+   anyway. **The match is deliberately unforgiving: the found title must equal the typed one
+   word for word, and the author must agree.** Anything looser was wrong in practice —
+   `"Captain"` found *Captains Courageous*, `"Diary of an 8-Bit Warrior"` found volume 5, and
+   `"Investigator Case Files"` found *True Case Files of a Paranormal Investigator*. Two real
+   books can share a title (*Wings of Fire* is a dragon series **and** Abdul Kalam's memoir),
+   so with no author to settle it an ambiguous title gets no cover at all. **On a child's
+   shelf a wrong cover is worse than none.** Of fourteen real titles tried, five matched and
+   every match was right.
+3. **The photo can be attached later** — tap the drawn cover, or the 📷 button in the report
+   header, which posts to `/books/{id}/cover`.
+
+Two traps that bit during this work:
+
+- **`set_cover` must derive the thumbnail from the bytes that just arrived.** It used to lean
+  on `_normalise_images`, which keeps whatever `thumb` was already there — so re-covering a
+  book that already had one stored unreadable bytes and went on showing the old thumbnail.
+- **The add-cover button is appended before its box is in the document**, so it must be found
+  with `box.querySelector("#addcov")`, not `$("addcov")` — the global lookup returns `null`
+  and `renderReport` throws, leaving the reader on the library with no report and no error.
 - Do not add a build step, a framework, or `localStorage` for book data. The whole point is that the page is a dumb client and the server + GitHub backup are the source of truth.
 - Don't gate features behind book counts. HAN explained everything to Henry up front; all tools are available from the first book.
 
@@ -304,6 +339,5 @@ questions are on the table the day launching is actually considered.
 - Let each person pick their own profile icon (currently hardcoded in `PROFILES`).
 
 - "Currently reading" state with chapter-by-chapter check-ins.
-- Open Library title search as a fallback when cover recognition fails.
 - Parent dashboard (read-only view of all reports and stats).
 - If this ever goes beyond the family: COPPA applies to under-13 data in the US. Needs parental-consent flow and legal review before onboarding anyone else's kids.
