@@ -144,10 +144,19 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
      also pins the language to Korean — asked in Korean the model likes to hand back the
      English title, and then the entire quiz arrives in English.
   2. `startQuiz` asks for `<meta>genre/kind</meta>` + five `<q>` blocks each with `mypick` (what the AI thinks) and `sure`.
-  3. `makeFollowups` → three `<fq>` feelings questions. `reroll()` regenerates choices.
-  4. `renderPlan` → Henry picks audience (teacher/friend/me) and taps sections in order. "Just write it" skips.
-  5. `makeReport` → AI writes only the chosen sections in the chosen order for that audience → `renderConfirm`.
-  6. `renderConfirm` → tap a section to reveal `FIXES` chips → `fixSection(k, fix, custom)` rewrites
+  3. `makeIntent` → **one** question about what the *writer* was doing, on its own screen.
+     Henry's teacher said he reads well for his age but struggles to see what a writer is up
+     to, which is a different skill from remembering what happened. So: every one of the four
+     answers must be arguable from the book (no trick answer — the prompt says so explicitly),
+     and **the reader must give a reason before the AI's pick is revealed**. Tapping an option
+     and moving on teaches nothing; committing to a reason first is the whole exercise. Three
+     reasons are offered, plus the typed fallback. Saved on the book as `intent`, shown back on
+     the report, and available as a report section. If the call fails the run continues to the
+     feelings questions — this must never block finishing a book.
+  4. `makeFollowups` → three `<fq>` feelings questions. `reroll()` regenerates choices.
+  5. `renderPlan` → Henry picks audience (teacher/friend/me) and taps sections in order. "Just write it" skips.
+  6. `makeReport` → AI writes only the chosen sections in the chosen order for that audience → `renderConfirm`.
+  7. `renderConfirm` → tap a section to reveal `FIXES` chips → `fixSection(k, fix, custom)` rewrites
      that section — the section labels exist **only here**, as scaffolding for choosing what
      to fix. Every part carries a visible `✎ fix this` pill and the first part opens with its
      chips already showing: an affordance nobody can see is an affordance nobody uses, and a
@@ -169,6 +178,9 @@ Plain ES2017 JS in one file. No framework, no bundler. Everything lives in the `
   after, lang, at}` and saved on the book as `edits`. This is the evidence that a person
   directed the machine — it is the point of the app, not telemetry. Keep it, and keep
   `before`/`after` whole. `Book.edits` on the server must exist or Pydantic silently drops it.
+- **The shelf pages at 20.** A year of reading is a very long scroll. `S.page` holds the
+  position, the pager only renders when there is more than one page, and the header shows the
+  range. Reset on profile switch and clamped whenever the list shrinks.
 - **Stats:** computed client-side in `renderLibrary` from `/books` (already profile-scoped). Genre labels/icons in `GN`.
   Each tile is tappable: `S.stat` holds which one is open and `statDetail(kind)` renders the books
   or questions behind that number, below the tiles. A number the reader can't open is a claim they

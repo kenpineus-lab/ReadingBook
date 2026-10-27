@@ -598,6 +598,7 @@ class Book(BaseModel):
     order: list = []
     answers: list = []
     follow: list = []
+    intent: dict | None = None   # the writer's-intent question, the pick, and the reason given
     report: dict | None = None
     thumb: str | None = None      # small copy for lists; derived on save, never uploaded
     edits: list = []              # every AI rewrite the reader asked for, with before/after

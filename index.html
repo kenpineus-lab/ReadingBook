@@ -278,6 +278,7 @@
 
   <div id="library"></div>
   <div id="quiz" class="hide"></div>
+  <div id="intent" class="hide"></div>
   <div id="follow" class="hide"></div>
   <div id="plan" class="hide"></div>
   <div id="report" class="hide"></div>
@@ -467,7 +468,7 @@
   function needSetup() { return !cfg.srv || !cfg.code; }
 
   // ---------- state
-  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, editing: null, claiming: false, hasPin: false, working: false, pkid: null, insight: null, editingId: null, editBase: null, asProfile: null, report0: null };
+  var S = { books: [], title: "", author: "", cover: null, qs: [], qi: 0, ans: [], picked: null, fqs: [], fi: 0, fans: [], report: null, edits: [], stat: null, page: 0, iq: null, ipick: null, ireason: null, intent: null, editing: null, claiming: false, hasPin: false, working: false, pkid: null, insight: null, editingId: null, editBase: null, asProfile: null, report0: null };
 
   // ---------- server
   // What the reader is told when the machine behind the machine says no.
@@ -541,7 +542,7 @@
 
   // ---------- ui helpers
   function show(id) {
-    ["library", "quiz", "follow", "plan", "report", "parent"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); });
+    ["library", "quiz", "intent", "follow", "plan", "report", "parent"].forEach(function (v) { $(v).classList.toggle("hide", v !== id); });
     $("homeBtn").classList.toggle("hide", id === "library");
     $("parentBtn").classList.toggle("hide", !(amAdult() && id === "library"));
     // swap profiles only from the library - never in the middle of a book
@@ -696,7 +697,7 @@
       b.onclick = function () {
         if (pr.id === P()) return;
         cfg.profile = pr.id; localStorage.setItem("bl:profile", pr.id);
-        S.books = []; S.stat = null; resetRun(); renderWho(); show("library"); loadBooks();
+        S.books = []; S.stat = null; S.page = 0; resetRun(); renderWho(); show("library"); loadBooks();
       };
       row.appendChild(b);
     });
@@ -888,9 +889,16 @@
     // the list of books is the one thing the family view is for, so it stays
     if (S.books.length) {
 
+      // A year of reading is a very long scroll. Twenty to a page, and the pager
+      // only appears once there is more than one page.
+      var PER = 20, pages = Math.ceil(S.books.length / PER);
+      if (S.page >= pages) S.page = 0;
+      var from = S.page * PER, slice = S.books.slice(from, from + PER);
+
       var lst = el("div", "box");
-      lst.innerHTML = '<div class="lbl">' + (isFamily() ? "EVERY BOOK THIS FAMILY HAS FINISHED" : "BOOKS YOU\'VE FINISHED") + ' · ' + S.books.length + '</div>';
-      S.books.forEach(function (x) {
+      lst.innerHTML = '<div class="lbl">' + (isFamily() ? "EVERY BOOK THIS FAMILY HAS FINISHED" : "BOOKS YOU\'VE FINISHED") + ' · ' + S.books.length +
+        (pages > 1 ? ' <span style="color:var(--amber)">\u00b7 ' + (from + 1) + '\u2013' + (from + slice.length) + '</span>' : '') + '</div>';
+      slice.forEach(function (x) {
         var r = el("div", "book");
         r.innerHTML = (x.thumb ? '<img src="' + x.thumb + '" alt=""/>' : '<div class="ph"></div>') +
           '<div style="flex:1;min-width:0"><div class="t">' + esc(x.title) + '</div><div class="m">' + (isFamily() ? who(x.profile).icon + ' ' + esc(who(x.profile).name) + ' · ' : '') + esc(x.date) + ' · ' + stars(x.report && x.report.stars) + (x.lang === "ko" ? ' · 한글' : '') + '</div><div class="w"><span style="color:var(--sub)">= ' + (x.aiWins || 0) + '</span> · ✦ ' + (x.henryWins || 0) + '</div></div>';
@@ -909,6 +917,22 @@
         };
         r.appendChild(rb); r.appendChild(db); lst.appendChild(r);
       });
+      if (pages > 1) {
+        var pg = el("div");
+        pg.style.cssText = "display:flex;align-items:center;gap:10px;justify-content:center;padding-top:14px";
+        var mk = function (label, to, on) {
+          var b = el("button", "sm", label);
+          b.style.cssText = "padding:9px 15px;font-size:13px;font-weight:700;" + (on ? "color:var(--amber)" : "color:var(--line);cursor:default");
+          if (on) b.onclick = function () { S.page = to; renderLibrary(); window.scrollTo({ top: lst.offsetTop - 70, behavior: "smooth" }); };
+          return b;
+        };
+        pg.appendChild(mk("\u2039", S.page - 1, S.page > 0));
+        var mid = el("div", null, (S.page + 1) + " / " + pages);
+        mid.style.cssText = "font-size:12px;color:var(--sub);font-weight:700;min-width:54px;text-align:center";
+        pg.appendChild(mid);
+        pg.appendChild(mk("\u203a", S.page + 1, S.page < pages - 1));
+        lst.appendChild(pg);
+      }
       L.appendChild(lst);
     }
   }
@@ -1252,7 +1276,7 @@
         '<p>' + T("It picked", "AI가 고른 건") + ' <b style="color:var(--text)">' + esc((q.mypick || "?").toUpperCase()) + '</b>' + T(" and said it was " + esc((q.sure || "medium").toLowerCase()) + " confidence. ", "이고, 자신감은 " + esc((q.sure || "medium").toLowerCase()) + "이래요. ") +
         (same ? T("Same answer — and you're the one who actually read it.", "같은 답이에요 — 그리고 진짜 읽은 사람은 " + RN() + "이고요.") : T("You read the book; it only guessed. Open the book and see where the two of you part ways.", "" + RN() + "는 읽었고 AI는 추측했어요. 책을 펴서 어디서 갈렸는지 봐요.")) + '</p>';
       $("after").appendChild(v);
-      var nb = el("button", "big amber", S.qi + 1 < S.qs.length ? T("Next question", "다음 문제") : T("Finish and write my report", "끝내고 독후감 쓰기")); nb.style.marginTop = "12px";
+      var nb = el("button", "big amber", S.qi + 1 < S.qs.length ? T("Next question", "다음 문제") : T("One last question", "마지막 한 문제")); nb.style.marginTop = "12px";
       nb.onclick = next; $("after").appendChild(nb);
     }
   }
@@ -1261,7 +1285,7 @@
     S.ans.push({ q: q.text, picked: k, pickedText: q[k], aiPick: q.mypick, aiSame: (q.mypick || "").toLowerCase().trim() === k, sure: q.sure });
     renderQuiz();
   }
-  function next() { if (S.qi + 1 < S.qs.length) { S.qi++; S.picked = null; renderQuiz(); } else makeFollowups(); }
+  function next() { if (S.qi + 1 < S.qs.length) { S.qi++; S.picked = null; renderQuiz(); } else makeIntent(); }
 
   // ---------- follow-up (feelings)
   async function makeFollowups() {
@@ -1294,6 +1318,104 @@
   function answerFollow(L) {
     var q = S.fqs[S.fi]; S.fans.push({ q: q.text, answer: q[L] });
     if (S.fi + 1 < S.fqs.length) { S.fi++; renderFollow(); } else { renderPlan(); show("plan"); }
+  }
+
+  // ---------- what was the writer doing
+  //
+  // Henry's teacher says he reads well for his age but struggles to see what a
+  // writer is *up to*. That is a different skill from remembering what happened,
+  // so it gets its own screen and its own kind of question - one where every
+  // answer is defensible and the reader has to say why they chose theirs before
+  // they are allowed to see what the AI thought. Tapping alone teaches nothing.
+  async function makeIntent() {
+    if (S.working) return;
+    busy(T("One more thing to think about...", "생각할 거리 하나만 더..."));
+    try {
+      var lines = S.ans.map(function (a, i) { return (i + 1) + ". " + a.q + " \u2192 " + a.pickedText; }).join("\n");
+      var raw = await ai(RN() + ' is ' + RL() + ' and just finished "' + S.title + '"' + (S.author ? ' by ' + S.author : '') + '.\nThey answered these about what happened:\n' + lines + '\n\nNow ask ONE question about what the WRITER was doing - why the book ends the way it does, why a character is allowed to fail, why the title is what it is, why something was left out. Never about what happened.\n\nEvery one of the four answers must be arguable from the book. No trick answer, no obviously silly one; a thoughtful reader could defend any of them. ' + voice() + '\n\nThen give three short reasons a reader might give for their choice - each pointing at something in the book - short enough to fit on a button.\n\nYou have not read this book, so your own pick is a guess about a guess. Say low or medium unless you are genuinely sure.\n\nUse exactly this format:\n<iq>\ntext: (the question)\na: (an answer)\nb: (an answer)\nc: (an answer)\nd: (an answer)\nmypick: (a, b, c or d)\nsure: (high, medium or low)\nr1: (a reason)\nr2: (a reason)\nr3: (a reason)\n</iq>',
+        [{ role: "user", content: "Ask about the writer" }], 900);
+      var q = kv(tag(raw, "iq"));
+      if (!q || !q.text || !q.a || !q.d) { busy(""); return makeFollowups(); }
+      S.iq = q; S.ipick = null; S.ireason = null;
+      renderIntent(); show("intent");
+    } catch (x) {
+      if (x && x.code) { busy(""); return fail(x, ""); }
+      busy(""); return makeFollowups();            // never let this block the run
+    }
+    busy("");
+  }
+
+  function renderIntent() {
+    var q = S.iq, I = $("intent"); I.innerHTML = "";
+    var b = el("div", "box");
+    b.innerHTML = '<div style="font-size:10px;color:var(--violet);letter-spacing:.12em;margin-bottom:7px">\u2726 ' +
+        T("WHAT WAS THE WRITER DOING?", "작가는 왜 그렇게 썼을까?") + '</div>' +
+      '<p class="note" style="margin:0 0 12px">' +
+        T("There is no trick answer here. Any of these could be right - pick the one you believe.",
+          "여기엔 함정이 없어요. 넷 다 맞을 수 있어요. 그렇다고 믿는 걸 골라요.") + '</p>' +
+      '<div class="q">' + esc(q.text) + '</div><div id="iopts"></div><div id="iafter"></div>';
+    I.appendChild(b);
+
+    ["a", "b", "c", "d"].forEach(function (k) {
+      var o = el("button", "opt" + (S.ipick === k ? " on" : "") + (S.ipick && S.ipick !== k ? " dim" : ""),
+                 "<b>" + k.toUpperCase() + "</b>" + esc(q[k]));
+      o.disabled = !!S.ipick;
+      o.onclick = function () { S.ipick = k; renderIntent(); };
+      $("iopts").appendChild(o);
+    });
+    if (!S.ipick) return;
+
+    // the reason comes before the reveal, on purpose
+    if (!S.ireason) {
+      var ask = el("div");
+      ask.style.cssText = "margin-top:16px;padding-top:14px;border-top:1px solid var(--line)";
+      ask.innerHTML = '<div class="q" style="font-size:16px;margin-bottom:10px">' +
+        T("Why do you think so?", "왜 그렇게 생각했어요?") + '</div>';
+      [q.r1, q.r2, q.r3].filter(Boolean).forEach(function (r) {
+        var o = el("button", "opt", esc(r));
+        o.onclick = function () { S.ireason = r; renderIntent(); };
+        ask.appendChild(o);
+      });
+      var own = el("button", "dash", "\u270f\ufe0f " + T("I'll say it myself", "내 말로 할게"));
+      own.onclick = function () {
+        var wrap = el("div"); wrap.style.cssText = "display:flex;gap:7px;margin-top:9px";
+        var i = el("input"); i.placeholder = T("Because...", "왜냐하면..."); i.style.flex = "1";
+        var go = el("button", "sm", T("OK", "좋아요"));
+        go.style.cssText = "padding:9px 15px;font-weight:800;color:var(--onAccent);background:var(--violet)";
+        var run = function () { var t = i.value.trim(); if (!t) return; S.ireason = t; renderIntent(); };
+        go.onclick = run;
+        i.onkeydown = function (e) { if (e.key === "Enter") run(); };
+        wrap.appendChild(i); wrap.appendChild(go);
+        own.replaceWith(wrap); i.focus();
+      };
+      ask.appendChild(own);
+      $("iafter").appendChild(ask);
+      return;
+    }
+
+    // only now does the AI get to say what it thought
+    var same = (q.mypick || "").toLowerCase().trim() === S.ipick;
+    var c = same ? "var(--green)" : "var(--violet)";
+    var v = el("div", "verdict");
+    v.style.background = same ? "rgba(132,169,140,.12)" : "rgba(169,139,196,.14)";
+    v.style.border = "1px solid " + c;
+    v.innerHTML = '<h4 style="color:' + c + '">' +
+        (same ? T("The AI read it the same way.", "AI도 같게 읽었어요.") : T("The AI read it differently.", "AI는 다르게 읽었어요.")) + '</h4>' +
+      '<p>' + T("It picked ", "AI가 고른 건 ") + '<b style="color:var(--text)">' + esc((q.mypick || "?").toUpperCase()) + '</b>' +
+        T(", " + esc((q.sure || "medium").toLowerCase()) + " confidence. ", ", 자신감은 " + esc((q.sure || "medium").toLowerCase()) + "이래요. ") +
+        T("Nobody can be sure what a writer meant \u2014 not even the writer, sometimes. What matters is that you can say why.",
+          "작가가 무슨 생각이었는지는 아무도 확신할 수 없어요 \u2014 가끔은 작가도요. 중요한 건 이유를 말할 수 있다는 거예요.") + '</p>' +
+      '<p style="margin-top:9px;color:var(--text)"><b>' + T("You said:", "내 생각:") + '</b> ' + esc(S.ireason) + '</p>';
+    $("iafter").appendChild(v);
+
+    var nb = el("button", "big amber", T("Keep going", "계속하기"));
+    nb.style.marginTop = "12px";
+    nb.onclick = function () {
+      S.intent = { q: q.text, picked: S.ipick, pickedText: q[S.ipick], reason: S.ireason,
+                   aiPick: q.mypick, aiSame: same, sure: q.sure };
+      makeFollowups();
+    };
+    $("iafter").appendChild(nb);
   }
 
   // ---------- plan the writing: who reads it, and what order
@@ -1344,7 +1466,7 @@
   }
 
   // ---------- report
-  var SECTIONS = [["summary", "What it's about", "무슨 이야기예요?"], ["favorite", "My favorite part", "제일 좋았던 부분"], ["feeling", "How it made me feel", "읽고 나서 느낌"], ["learned", "What I take from it", "배운 것"], ["recommend", "Would I tell a friend?", "친구에게 추천할까?"]];
+  var SECTIONS = [["summary", "What it's about", "무슨 이야기예요?"], ["favorite", "My favorite part", "제일 좋았던 부분"], ["feeling", "How it made me feel", "읽고 나서 느낌"], ["learned", "What I take from it", "배운 것"], ["recommend", "Would I tell a friend?", "친구에게 추천할까?"], ["intent", "What the writer was doing", "작가는 왜 그렇게 썼을까"]];
 
   async function makeReport() {
     if (S.working) return;
@@ -1354,9 +1476,9 @@
       var feel = S.fans.length ? S.fans.map(function (a) { return "- " + a.q + "\n  " + RN() + " said: " + a.answer; }).join("\n") : "(they didn't add anything)";
       var AUDN = { teacher: "their teacher — so a little more careful and complete, but still their own words", friend: "a friend — so casual and easy, the way they would actually tell someone", me: "only themselves — a private note, honest, can be short" };
       var order = (S.order && S.order.length) ? S.order : SECTIONS.map(function (x) { return x[0]; });
-      var DESC = { summary: "(2 sentences about what the book is about, based on their answers)", favorite: "(1-2 sentences about the part or character they liked, in their voice)", feeling: "(1-2 sentences about how the book made them feel, based on what they said)", learned: "(1 sentence about what they might take away from it)", recommend: "(1 short sentence — would they tell a friend to read it, and why)" };
+      var DESC = { summary: "(2 sentences about what the book is about, based on their answers)", favorite: "(1-2 sentences about the part or character they liked, in their voice)", feeling: "(1-2 sentences about how the book made them feel, based on what they said)", learned: "(1 sentence about what they might take away from it)", recommend: "(1 short sentence — would they tell a friend to read it, and why)", intent: "(1-2 sentences on what they think the writer was doing and why they think so — use their own reason, never a better one you thought of)" };
       var fmt = order.map(function (k) { return k + ": " + DESC[k]; }).join("\n");
-      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — honest, unforced, the way they would actually put it. ' + voice() + '\n' + (L() === "ko" ? voice() : "") + '\nWrite it in the first person, as them — "I", never their name and never "he" or "she". Never invent things they didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat they answered about the story:\n' + lines + '\n\nWhat they said about how they felt:\n' + feel + '\n\nTheir feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what they said)\n</report>',
+      var raw = await ai('You help ' + RN() + ', ' + RL() + ', write a short book report about a book they just finished.\nUse their own answers below. Write it in THEIR voice — honest, unforced, the way they would actually put it. ' + voice() + '\n' + (L() === "ko" ? voice() : "") + '\nWrite it in the first person, as them — "I", never their name and never "he" or "she". Never invent things they didn\'t say. If you\'re unsure about a detail, leave it out.\n\nWho will read it: ' + (AUDN[S.audience] || AUDN.me) + '\n' + RN() + ' decided the ORDER themselves. Write ONLY these parts, in exactly this order. They will be printed as one continuous piece with no headings, so each part must read as the next paragraph of a single essay \u2014 carry the thread forward, never restate the question, never announce what the part is about:\n' + order.join(" → ") + '\n\nBook: ' + S.title + (S.author ? ' by ' + S.author : '') + '\n\nWhat they answered about the story:\n' + lines + '\n\nWhat they said about how they felt:\n' + feel + (S.intent ? '\n\nWhat they think the writer was doing:\n- ' + S.intent.q + '\n  They chose: ' + S.intent.pickedText + '\n  Because: ' + S.intent.reason : '') + '\n\nTheir feelings matter most — build the report around those, and use the story answers for the facts.\n\nFormat exactly:\n<report>\n' + fmt + '\nstars: (a number 1-5 based on what they said)\n</report>',
         [{ role: "user", content: "Write the report" }], 900);
       var r = kv(tag(raw, "report"));
       if (!r) throw new Error("no report");
@@ -1497,7 +1619,7 @@
         date: base ? base.date : new Date().toISOString().slice(0, 10),
         lang: L(), genre: S.genre || "other", kind: S.kind || "fiction",
         audience: S.audience || "me", order: S.order || [],
-        answers: S.ans, follow: S.fans, report: S.draft,
+        answers: S.ans, follow: S.fans, intent: S.intent || null, report: S.draft,
         report0: S.report0 || null,
         edits: S.edits || [],
         henryWins: wins, aiWins: S.ans.length - wins,
@@ -1522,7 +1644,7 @@
     S.genre = b.genre || "other"; S.kind = b.kind || "fiction";
     S.audience = b.audience || "me";
     S.order = (b.order && b.order.length) ? b.order.slice() : SECTIONS.map(function (x) { return x[0]; });
-    S.ans = b.answers || []; S.fans = b.follow || [];
+    S.ans = b.answers || []; S.fans = b.follow || []; S.intent = b.intent || null;
     S.draft = JSON.parse(JSON.stringify(b.report || {}));
     S.edits = (b.edits || []).slice();
     S.report0 = b.report0 || null;             // legacy books have none, and we don't invent one
@@ -1561,6 +1683,14 @@
                              "\u2726 는 " + RN() + "와 AI가 다르게 읽은 곳이에요. 누가 자동으로 맞는 건 아니에요 \u2014 다만 책을 진짜 읽은 사람은 한 명뿐이죠. 그걸 기억해요.") + '</p>';
     R.appendChild(sc);
 
+    if (b.intent) {
+      var ib = el("div", "box");
+      ib.innerHTML = '<div class="lbl" style="color:var(--violet)">' + T("WHAT THE WRITER WAS DOING", "작가는 왜 그렇게 썼을까") + '</div>' +
+        '<div class="mini" style="font-size:12px;color:var(--sub);line-height:1.5">' + esc(b.intent.q) + '</div>' +
+        '<p style="margin:7px 0 0;font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--ink)">' + esc(b.intent.pickedText) + '</p>' +
+        '<p class="note" style="margin-top:6px"><b style="color:var(--violet)">' + T("Because:", "왜냐하면:") + '</b> ' + esc(b.intent.reason || "") + '</p>';
+      R.appendChild(ib);
+    }
     if (b.report0) R.appendChild(firstDraft(b));
     if ((b.edits || []).length) R.appendChild(editLog(b));
 
@@ -1626,7 +1756,7 @@
     w.document.close(); setTimeout(function () { w.print(); }, 400);
   }
 
-  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.report = null; S.audience = null; S.order = []; S.draft = null; S.edits = []; S.editingId = null; S.editBase = null; S.asProfile = null; S.report0 = null; err(""); renderLibrary(); }
+  function resetRun() { S.title = ""; S.author = ""; S.cover = null; S.qs = []; S.qi = 0; S.ans = []; S.picked = null; S.fqs = []; S.fi = 0; S.fans = []; S.iq = null; S.ipick = null; S.ireason = null; S.intent = null; S.report = null; S.audience = null; S.order = []; S.draft = null; S.edits = []; S.editingId = null; S.editBase = null; S.asProfile = null; S.report0 = null; err(""); renderLibrary(); }
 
   // ---------- boot
   $("homeBtn").onclick = function () { resetRun(); show("library"); };
